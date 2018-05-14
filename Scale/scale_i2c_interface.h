@@ -1,6 +1,10 @@
 #ifndef __SCALE_I2C_ITF_H__
 #define __SCALE_I2C_ITF_H__
 
+// NOTE : works well with "standalone" I²C connection on very short range.
+// With mid-range connection (2.5m) external pullups were needed (used 1.2kOhm as I did not found 4.7k ones... Stronger pullup means more power consuption when pulling down the bus.)
+
+
 // Address
 #define SCALE_I2C_ADDRESS 23
 
