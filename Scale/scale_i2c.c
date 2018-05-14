@@ -24,7 +24,7 @@ typedef struct {
 command_t commands[] = {
     {SCALE_I2C_POWER_DOWN, 0, scale_i2c_power_down/*, 0*/},
     {SCALE_I2C_POWER_UP, 0, scale_i2c_power_up/*, 0*/},
-    {SCALE_I2C_TARE, 0, scale_i2c_tare/*, 0*/},
+    {SCALE_I2C_TARE, 1, scale_i2c_tare/*, 0*/},
     {SCALE_I2C_SET_ZERO_OFFSET, 3, scale_i2c_set_zero_offset/*, 0*/},
     {SCALE_I2C_SET_CALIBRATION, sizeof(float), scale_i2c_set_calibration/*, 0*/},
     {SCALE_I2C_GET_ZERO_OFFSET, 0, scale_i2c_get_zero_offset/*, 3*/},
@@ -40,8 +40,8 @@ typedef enum {
     WAITING = 0,
     READING_ARGS = 1,
     READY = 2,
-    TALKING = 3,
-    WAIT_DONE = 4
+    TALKING = 3/*,
+    WAIT_DONE = 4*/
 } i2c_scale_status_t;
 
 static i2c_scale_status_t status;
@@ -100,29 +100,32 @@ void i2c_scale_requested(request_t req_type) {
         case CONTINUATION:
             if (status != TALKING) {
                 dbg("Requested to tranmit data, while not in TALKING state (status == %d)\n", status);
-                 reset_state();
+                reset_state();
                 break;
             }
             if (buffer_index >= reply_len) {
                 // abnormal situation, give a trace here
                 dbg("ERR : buffer_index >= reply_len\n");
                 reset_state();
+                break;
             }
-            dbg("send I2C data : %x", buffer[buffer_index]);
-            i2c_slave_transmitByte(buffer[buffer_index], (buffer_index+1)==reply_len?1:0);
+            dbg("send I2C data : %x %s\n", buffer[buffer_index], (buffer_index+1)==reply_len?"(last)":"");
+            i2c_slave_transmitByte(buffer[buffer_index]);
             buffer_index++;
             if (buffer_index == reply_len) { // We're done !!
-                dbg("Succesfully transmitted reply_len bytes\n");
-                status = WAIT_DONE;
+                dbg("Succesfully transmitted %d bytes\n", reply_len);
+                reset_state();
             }
             break;
 
-        case DONE:
-            if (status != WAIT_DONE) {
-                dbg("'warning !! got i2c request 'DONE', while status not DONE (status == %d)\n", status);
-            }
-            reset_state();
-            break;
+//         case DONE:
+//             if (status != WAIT_DONE) {
+//                 dbg("'warning !! got i2c request 'DONE', while status not DONE (status == %d)\n", status);
+//             } else {
+//                 dbg("Communication end.\n");
+//             }
+//             reset_state();
+//             break;
 
         default:
             dbg("i2c_scale_requested : unknown req_type %d\n", req_type);
@@ -141,8 +144,17 @@ void i2c_scale_receive(uint8_t data) {
             if (current_command != NULL) {
                 buffer_index = 0;
                 if (current_command->arg_len == 0) {
-                    status = READY;
+                    // no arg to get, just execute callback
+                    reply_len = current_command->callback(buffer, BUFFER_SIZE);
+                    if (reply_len > 0) {
+                        status = READY; // to send data
+                        buffer_index = 0;
+                    } else {
+                        // nothing to send, we're done
+                        reset_state();
+                    }
                 } else {
+                    // We have data arg to read
                     status = READING_ARGS;
                 }
             }
@@ -161,6 +173,7 @@ void i2c_scale_receive(uint8_t data) {
                 reply_len = current_command->callback(buffer, BUFFER_SIZE);
                 if (reply_len > 0) {
                     status = READY; // to send data
+                    buffer_index = 0;
                 } else {
                     reset_state();
                 }
