@@ -38,7 +38,7 @@
 #include "scale_i2c.h"
 #include <avr/cpufunc.h>
 #include <util/delay.h>
-
+#include "HX711.h"
 
 float calibration_factor = 12800;
 
@@ -47,13 +47,13 @@ void init(void) {
     stdout = &avr_uart_output;
     stdin  = &avr_uart_input_echo;
     i2c_scale_init();
-    //HX711_init(128);
+    HX711_init(128);
 }
 
 int main(void) {
     init();
 
-    printf("i2c scale prototype (for testing i2c communication\n");
+    printf("i2c scale\n");
 
     while(1) {
         _NOP(); // all the magic happends in interrupts.
