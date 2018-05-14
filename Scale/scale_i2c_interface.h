@@ -9,7 +9,7 @@
 #define SCALE_I2C_POWER_DOWN         1    // no arg
 #define SCALE_I2C_POWER_UP           2    // no arg
 #define SCALE_I2C_TARE               3    // arg : nb reads to mean. 0 is default (SCALE_I2C_DEFAULT_NB_READS)
-                                          // NB : tare is done at boot + each POWER_UP command received, using SCALE_I2C_DEFAULT_NB_READS as arg
+                                          // NB : tare is NOT done at boot (as for now)
 #define SCALE_I2C_SET_ZERO_OFFSET    4    // "manual tare". arg : 3 bytes (MSB first), becomes the new "zero" reading value
 #define SCALE_I2C_SET_CALIBRATION    5    // arg : float (4bytes, MSB first)
 

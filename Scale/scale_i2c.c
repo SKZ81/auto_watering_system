@@ -5,7 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifndef DEBUG
 #define DEBUG 1
+#endif
 
 #if DEBUG
     #define dbg(x, ...) printf_P(PSTR(x) ,##__VA_ARGS__)
