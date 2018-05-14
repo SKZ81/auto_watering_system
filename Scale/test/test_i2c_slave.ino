@@ -129,6 +129,7 @@ void loop(void) {
     if (commands[cmd].reply_len == 0) {
         // nothing to read, free the bus
         Wire.endTransmission( true );
+        Serial.println(" ...done");
     } else {
         Wire.endTransmission( false );
         Serial.print("  : [ ");
