@@ -1,5 +1,6 @@
+#include "config.h"
 #include <Wire.h>
-#include "../scale_i2c_interface.h"
+#include "../../scale_i2c_interface.h"
 // #include <string.h>
 // #include <stdlib.h>
 
@@ -69,7 +70,7 @@ command_t commands[] = {
 
 
 void setup(void) {
-    Wire.begin();
+    Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
     Serial.begin(115200);
     Serial.setTimeout(5000);
 }
