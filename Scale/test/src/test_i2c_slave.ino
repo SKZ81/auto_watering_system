@@ -136,11 +136,11 @@ void loop(void) {
     int ret = 0;
     if (commands[cmd].reply_len == 0) {
         // nothing to read, free the bus
-        ret = Wire.endTransmission( true );
+        ret = Wire.endTransmission( /*true*/ );
         Serial.print(" ...done : ");
         Serial.println(ret);
     } else {
-        ret = Wire.endTransmission( false );
+        ret = Wire.endTransmission( /*false*/ ); // ESP8266 doesn't support repeated start
         Serial.print(" (");
         Serial.print(ret);
         Serial.print(": [ ");
