@@ -118,7 +118,7 @@ void loop(void) {
     Serial.print(commands[cmd].arg_len, DEC);
     Serial.print(" bytes of data = [ ");
     for(uint8_t i=0; i<commands[cmd].arg_len; i++) {
-        Serial.print(buffer[i], HEX);
+        Serial.print(buffer[i+1], HEX);
         Serial.print(" ");
     }
 
