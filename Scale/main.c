@@ -53,7 +53,11 @@ void init(void) {
 int main(void) {
     init();
 
+#ifdef I2C_CB_STUB
+    printf("i2c scale STUB (for testing i²c communication)");
+#else
     printf("i2c scale\n");
+#endif
 
     while(1) {
         _NOP(); // all the magic happends in interrupts.
