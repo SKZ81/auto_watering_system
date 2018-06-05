@@ -70,14 +70,18 @@ command_t commands[] = {
 
 
 void setup(void) {
-    Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
     Serial.begin(115200);
+    Serial.println("I2C master, for testing scale");
     Serial.setTimeout(5000);
+    Serial.println("DBG : after setTimeout()");
+    Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
+    Wire.setClockStretchLimit(400000);
+    Serial.println("DBG : after Wire.begin()");
 }
 
 
 void loop(void) {
-    uint8_t buffer[4] = {0};
+    uint8_t buffer[5] = {0};
 
     Serial.println();
     Serial.println("______________________");
@@ -105,7 +109,8 @@ void loop(void) {
 
     cmd = char_cmd - '1';
 
-    commands[cmd].read_callback(buffer);
+    buffer[0] = commands[cmd].code;
+    commands[cmd].read_callback(buffer+1);
 
     Serial.print(">>> I2C communication, will send command_code: ");
     Serial.print(commands[cmd].code, DEC);
@@ -123,17 +128,22 @@ void loop(void) {
     Serial.print(" expected...)");
 
     Wire.beginTransmission((uint8_t)SCALE_I2C_ADDRESS);
-    Wire.write((uint8_t)commands[cmd].code);
-    for(uint8_t i=0; i<commands[cmd].arg_len; i++) {
-        Wire.write((uint8_t)buffer[i]);
-    }
+//     Wire.write((uint8_t)commands[cmd].code);
+//     for(uint8_t i=0; i<commands[cmd].arg_len; i++) {
+//         Wire.write((uint8_t)buffer[i]);
+//     }
+    Wire.write(buffer, commands[cmd].arg_len+1);
+    int ret = 0;
     if (commands[cmd].reply_len == 0) {
         // nothing to read, free the bus
-        Wire.endTransmission( true );
-        Serial.println(" ...done");
+        ret = Wire.endTransmission( true );
+        Serial.print(" ...done : ");
+        Serial.println(ret);
     } else {
-        Wire.endTransmission( false );
-        Serial.print("  : [ ");
+        ret = Wire.endTransmission( false );
+        Serial.print(" (");
+        Serial.print(ret);
+        Serial.print(": [ ");
         Wire.requestFrom((uint8_t)SCALE_I2C_ADDRESS, (uint8_t)commands[cmd].reply_len);
         while(Wire.available()) {
             uint8_t result = Wire.read() ;
