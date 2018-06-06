@@ -38,7 +38,9 @@
 #include "scale_i2c.h"
 #include <avr/cpufunc.h>
 #include <util/delay.h>
-#include "HX711.h"
+#ifndef STUB_HX711
+  #include "HX711.h"
+#endif
 
 float calibration_factor = 12800;
 
@@ -47,14 +49,16 @@ void init(void) {
     stdout = &avr_uart_output;
     stdin  = &avr_uart_input_echo;
     i2c_scale_init();
+#ifndef STUB_HX711
     HX711_init(128);
+#endif
 }
 
 int main(void) {
     init();
 
-#ifdef I2C_CB_STUB
-    printf("i2c scale STUB (for testing i²c communication)");
+#ifdef STUB_HX711
+    printf("i2c scale STUB (for testing i²c communication)\n");
 #else
     printf("i2c scale\n");
 #endif

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <avr/pgmspace.h>
 #include "i2c_callbacks.h"
-#ifndef I2C_CB_STUB
+#ifndef STUB_HX711
   #include "HX711.h"
 #endif
 
@@ -18,7 +18,7 @@
     #define dbg(x, ...)
 #endif
 
-#ifdef I2C_CB_STUB
+#ifdef STUB_HX711
 // when STUB, those variable are to "emulate" HX711, which stores those values internally
 static int32_t zero_offset = 0;
 static float calibration_factor = 1.0;
@@ -28,7 +28,7 @@ static float calibration_factor = 1.0;
 
 uint8_t scale_i2c_power_down       (uint8_t *buffer, uint8_t buffer_len) {
     dbg("POWER DOWN\n");
-#ifndef I2C_CB_STUB
+#ifndef STUB_HX711
     HX711_power_up();
 #endif
     return 0;
@@ -38,7 +38,7 @@ uint8_t scale_i2c_power_down       (uint8_t *buffer, uint8_t buffer_len) {
 
 uint8_t scale_i2c_power_up         (uint8_t *buffer, uint8_t buffer_len) {
     dbg("POWER UP\n");
-#ifndef I2C_CB_STUB
+#ifndef STUB_HX711
     HX711_power_down();
 #endif
     return 0;
@@ -48,7 +48,7 @@ uint8_t scale_i2c_power_up         (uint8_t *buffer, uint8_t buffer_len) {
 
 uint8_t scale_i2c_tare             (uint8_t *buffer, uint8_t buffer_len) {
     dbg("TARE, nb_times=%d\n", buffer[0]);
-#ifndef I2C_CB_STUB
+#ifndef STUB_HX711
     HX711_tare(buffer[0]);
 #endif
     return 0;
@@ -59,7 +59,7 @@ uint8_t scale_i2c_tare             (uint8_t *buffer, uint8_t buffer_len) {
 uint8_t scale_i2c_set_zero_offset  (uint8_t *buffer, uint8_t buffer_len) {
     long offset = ((int32_t)buffer[0]) << 16 | ((int32_t)buffer[1]) << 8 | ((int32_t)buffer[2]);
     dbg("SET_ZERO_OFFSET to %ld\n", offset);
-#ifndef I2C_CB_STUB
+#ifndef STUB_HX711
     HX711_set_offset(offset);
 #else
     zero_offset = offset;
@@ -73,7 +73,7 @@ uint8_t scale_i2c_set_calibration  (uint8_t *buffer, uint8_t buffer_len) {
     float calib = 0.0;
     memcpy(&calib, buffer, sizeof(float));
     dbg("SET_CALIBRATION to %f\n", calib);
-#ifndef I2C_CB_STUB
+#ifndef STUB_HX711
     HX711_set_scale(calib);
 #else
     calibration_factor = calib;
@@ -85,7 +85,7 @@ uint8_t scale_i2c_set_calibration  (uint8_t *buffer, uint8_t buffer_len) {
 
 uint8_t scale_i2c_get_zero_offset  (uint8_t *buffer, uint8_t buffer_len) {
     long offset
-#ifndef I2C_CB_STUB
+#ifndef STUB_HX711
                 = HX711_get_offset();
 #else
                 = zero_offset;
@@ -101,7 +101,7 @@ uint8_t scale_i2c_get_zero_offset  (uint8_t *buffer, uint8_t buffer_len) {
 
 uint8_t scale_i2c_read             (uint8_t *buffer, uint8_t buffer_len) {
     long raw_value
-#ifndef I2C_CB_STUB
+#ifndef STUB_HX711
                     = HX711_read_average(buffer[0]);
 #else
                     = 0x00654321;
@@ -118,7 +118,7 @@ uint8_t scale_i2c_read             (uint8_t *buffer, uint8_t buffer_len) {
 
 uint8_t scale_i2c_get_value        (uint8_t *buffer, uint8_t buffer_len) {
     float value
-#ifndef I2C_CB_STUB
+#ifndef STUB_HX711
                 = HX711_get_mean_units(buffer[0]);
 #else
                 = 1234.56;
@@ -132,7 +132,7 @@ uint8_t scale_i2c_get_value        (uint8_t *buffer, uint8_t buffer_len) {
 
 uint8_t scale_i2c_get_calibration  (uint8_t *buffer, uint8_t buffer_len) {
     float calib
-#ifndef I2C_CB_STUB
+#ifndef STUB_HX711
                 = HX711_get_scale();
 #else
                 = calibration_factor;
