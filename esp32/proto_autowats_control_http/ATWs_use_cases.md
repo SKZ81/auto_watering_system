@@ -1,0 +1,61 @@
+AutoWatS use cases
+==================
+
+Users
+-----
+
+Users are divided into roles, but can be physically the same person.
+Roles are :
+* grower: it is the end-user of the system.
+* provisionner/sysadmin: manages the technicalities of the system.
+
+Provisionning
+-------------
+
+* As a sysadmin, I want to add/edit strains caracteristics [TBD]
+    - should be on a web interface (not on-device) ?
+    -
+    -
+    -
+    -
+
+
+Programming
+-----------
+* As a grower, I want to insert/remove LINEs (of a given strain)
+* As a sysadmin, I want to add/edit/remove strain's program
+
+
+strain's program
+----------------
+* How many fert / L / w
+* Other (lighting....)
+
+Strain caracteristics
+---------------------
+* Nb Weeks
+* Fert / wk (array)
+
+Alerting
+--------
+* As a grower I xant to receive ALERTs abouts EVENTs
+
+Alerts
+------
+
+Text tanscription of an event, sent through any protocol : mail, SMS, pigeon carrier...
+
+Event
+-----
+
+* a reminder, at a date, for a given live/strain
+* Any variable (or group: meaned, mined or maxed or other) of the system either:
+    - cross a threshold
+= Any "Risk" : risk alerts are called "alarms".
+    - Not enough clear water in tank anymore
+    -
+
+Bluetooth:
+----------
+* Use bluetooth tags for identifing strains:
+    - what gain overall cost ? => use of smartphone vs. NFC custom reader ?)

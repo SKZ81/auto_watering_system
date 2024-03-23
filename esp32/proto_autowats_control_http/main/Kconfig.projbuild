@@ -1,0 +1,26 @@
+menu "AutoWatS config"
+    config AUTOWATS_I2C_PORT
+        int "I²C hardware port number"
+        range 0 1
+        default 0
+    config AUTOWATS_I2C_SDA_GPIO
+        int "I²C SDA gpio number"
+        range 0 33
+        default 26
+    config AUTOWATS_I2C_SCL_GPIO
+        int "I²C SCL gpio number"
+        range 0 33
+        default 25
+    config AUTOWATS_I2C_MCP23017_FREQ
+        int "I²C bus frequency for MCP23017 (Hz)"
+        range 100000 400000
+        default 400000
+    config AUTOWATS_I2C_MCP23017_ADDR_OFFSET
+        int "MCP23017 I²C address offset"
+        range 0 7
+        default 0
+        help
+            Base address is 0x20. Offset will be added to this base to determine
+            acvtual MCP23017 address,; related on how "Hardware address pins"
+            (A0..2) of the MCP23017 chip are biased (please refer to datasheet).
+endmenu
