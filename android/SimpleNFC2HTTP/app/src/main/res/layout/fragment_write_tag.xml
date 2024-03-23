@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="16dp">
+
+    <!-- Tag ID -->
+    <EditText
+        android:id="@+id/plantId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Tag ID"
+        android:inputType="text"
+        android:enabled="false" />
+
+    <!-- Variety Spinner -->
+    <Spinner
+        android:id="@+id/varietySpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp" />
+
+    <!-- Germination -->
+    <EditText
+        android:id="@+id/germinationDateEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Germination"
+        android:focusable="false" />
+
+    <!-- Blooming -->
+    <EditText
+        android:id="@+id/bloomingDateEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Blooming"
+        android:focusable="false" />
+
+    <!-- Yielding -->
+    <EditText
+        android:id="@+id/yieldingDateEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Yielding"
+        android:focusable="false" />
+
+    <!-- Generate ID Button -->
+    <Button
+        android:id="@+id/generateIdButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Generate ID"
+        android:layout_marginTop="16dp" />
+
+    <!-- Write Tag Button -->
+    <Button
+        android:id="@+id/writeTagButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Write Tag"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
