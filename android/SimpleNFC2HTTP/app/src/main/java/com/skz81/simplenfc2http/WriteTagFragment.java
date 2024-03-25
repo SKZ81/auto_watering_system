@@ -2,6 +2,7 @@ package com.skz81.simplenfc2http;
 
 import android.os.Bundle;
 import android.app.DatePickerDialog;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,10 +15,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
 import java.util.UUID;
 import java.util.Calendar;
 
 public class WriteTagFragment extends Fragment {
+    private static final String TAG = "AutoWatS-NFC-write";
 
     private EditText plantId;
     private Spinner varietySpinner;
@@ -33,14 +36,13 @@ public class WriteTagFragment extends Fragment {
         // Required empty public constructor
     }
 
-    private Void addDateFieldListener(EditText textview) {
+    private void addDateFieldListener(EditText textview) {
         textview.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showDatePickerDialog(textview);
             }
         });
-        return null;
     }
 
     @Nullable
