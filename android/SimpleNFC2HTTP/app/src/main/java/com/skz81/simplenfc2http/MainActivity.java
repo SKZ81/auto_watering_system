@@ -17,9 +17,9 @@ import com.google.android.material.tabs.TabLayout;;
 import com.skz81.simplenfc2http.R;
 import com.skz81.simplenfc2http.ScanTagsFragment;
 import com.skz81.simplenfc2http.WriteTagFragment;
-import com.skz81.simplenfc2http.TabFragment;
+import com.skz81.simplenfc2http.AppConfFragment;
 
-
+import com.skz81.simplenfc2http.AppConfiguration;
 
 public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderCallback {
     private static final String TAG = "AutoWatS-NFC";
@@ -30,10 +30,10 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.d(TAG, "onCreate");
+        Log.i(TAG, "is starting...");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        AppConfiguration.static_init(this);
         tagCB = null;
 
         ViewPager viewPager = findViewById(R.id.viewPager);
@@ -61,7 +61,7 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
         adapter.addFragment(new ScanTagsFragment(), "Scan...");
         adapter.addFragment(new WriteTagFragment(), "Write Tag");
-        adapter.addFragment(new TabFragment("Config"), "Tab 3");
+        adapter.addFragment(new AppConfFragment(), "Config");
         viewPager.setAdapter(adapter);
     }
 
