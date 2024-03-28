@@ -1,6 +1,5 @@
 package com.skz81.simplenfc2http;
 
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -80,8 +79,23 @@ public class ScanTagsFragment extends Fragment implements NdefTagCallback {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        if (mainActivity != null) {
+            mainActivity.startNFCScan(this);
+        }
+    }
+
+    @Override
+    public void onPause() {
+        if (mainActivity != null) {
+            mainActivity.stopNFCScan();
+        }
+        super.onPause();
+    }
+
+    @Override
     public void onDestroyView() {
-        MainActivity mainActivity = (MainActivity) getActivity();
         if (mainActivity != null) {
             mainActivity.stopNFCScan();
         }

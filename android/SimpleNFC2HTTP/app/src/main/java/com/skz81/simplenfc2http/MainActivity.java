@@ -46,12 +46,15 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
         if (mNfcAdapter == null) {
             Toast.makeText(this, "NFC is not available", Toast.LENGTH_LONG).show();
             finish();
+            Log.e(TAG, "NFC not available.");
             return;
         }
 
         if (!mNfcAdapter.isEnabled()) {
             Toast.makeText(this, "Please enable NFC", Toast.LENGTH_LONG).show();
+            Log.w(TAG, "NFC Disabled !..");
         }
+
     }
 
     private void setupViewPager(ViewPager viewPager) {
