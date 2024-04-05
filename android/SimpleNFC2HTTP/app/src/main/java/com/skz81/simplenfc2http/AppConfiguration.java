@@ -5,6 +5,8 @@ import android.content.Context;
 
 public class AppConfiguration {
 
+    public static final String VARIETIES_URL = "/cgi-bin/draft.py";
+
     private static AppConfiguration instance = null;
     private static SharedPreferences sharedPreferences = null;
 

@@ -1,6 +1,10 @@
 package com.skz81.simplenfc2http;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,7 +25,9 @@ import android.nfc.Tag;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -29,10 +35,9 @@ import java.net.URL;
 import com.skz81.simplenfc2http.MainActivity;
 import com.skz81.simplenfc2http.NdefTagCallback;
 
-public class ScanTagsFragment extends Fragment implements NdefTagCallback {
-    private static final String SERVER_URL = "http://yourserveraddress.com";
-    private static final int SERVER_PORT = 8080;
-
+public class ScanTagsFragment extends Fragment
+                              implements NdefTagCallback,
+                                         SendToServerTask.ReplyCB {
     private static final String TAG = "AutoWatS-NFC-scan";
 
     private MainActivity mainActivity;
@@ -146,42 +151,44 @@ public class ScanTagsFragment extends Fragment implements NdefTagCallback {
         }
     }
 
-    private void sendToServer(String data) {
-        new SendToServerTask().execute(data);
+    private void sendToServer(String url, String data) {
+        new SendToServerTask(this).POST(url, data);
     }
 
-    private class SendToServerTask extends AsyncTask<String, Void, Void> {
+    @Override
+    public void onReplyFromServer(String data) {
+        Log.i(TAG, "Got answer from server:\n" + data);
+    }
+
+    @Override
+    public void onError(String error) {
+        Toast.makeText(mainActivity, "Can't get TAG data from server:\n" + error,
+                       Toast.LENGTH_LONG).show();
+    }
+
+    private class LoadImageTask extends AsyncTask<String, Void, Bitmap> {
+        private ImageView view = null;
+
+        public LoadImageTask(ImageView view) {
+            this.view = view;
+        }
 
         @Override
-        protected Void doInBackground(String... params) {
-            HttpURLConnection urlConnection = null;
-            try {
-                URL url = new URL(SERVER_URL + ":" + SERVER_PORT);
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("POST");
-                urlConnection.setDoOutput(true);
-                urlConnection.setChunkedStreamingMode(0);
+        protected Bitmap doInBackground(String... params) {
+            // Decode base64 string to byte array
+            byte[] decodedBytes = Base64.decode(params[0], Base64.DEFAULT);
+            // Convert byte array to Bitmap
+            InputStream inputStream = new ByteArrayInputStream(decodedBytes);
+            return BitmapFactory.decodeStream(inputStream);
+        }
 
-                Log.d(TAG, "Contacting " + url+toString() + " ...");
-
-                OutputStream out = urlConnection.getOutputStream();
-                out.write(params[0].getBytes());
-                out.flush();
-                out.close();
-
-                int responseCode = urlConnection.getResponseCode();
-                if (responseCode != HttpURLConnection.HTTP_OK) {
-                    throw new IOException("Server response code: " + responseCode);
-                }
-            } catch (IOException e) {
-                Log.e(TAG, "Error sending data to server: " + e.getMessage());
-                Toast.makeText(mainActivity, "Error with HTTP server.", Toast.LENGTH_LONG).show();
-            } finally {
-                if (urlConnection != null) {
-                    urlConnection.disconnect();
-                }
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+            // Set the bitmap to the ImageView
+            if (bitmap != null && view != null) {
+                view.setImageBitmap(bitmap);
             }
-            return null;
         }
     }
 }

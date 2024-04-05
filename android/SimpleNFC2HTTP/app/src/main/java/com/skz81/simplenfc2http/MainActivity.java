@@ -18,8 +18,8 @@ import com.skz81.simplenfc2http.R;
 import com.skz81.simplenfc2http.ScanTagsFragment;
 import com.skz81.simplenfc2http.WriteTagFragment;
 import com.skz81.simplenfc2http.AppConfFragment;
-
 import com.skz81.simplenfc2http.AppConfiguration;
+import com.skz81.simplenfc2http.Varieties;
 
 public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderCallback {
     private static final String TAG = "AutoWatS-NFC";
@@ -27,6 +27,8 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
     private NfcAdapter mNfcAdapter;
     private TextView mTextView;
     private NdefTagCallback tagCB;
+    private AppConfiguration config;
+    private Varieties varieties;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +36,7 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         AppConfiguration.static_init(this);
+        config = AppConfiguration.instance();
         tagCB = null;
 
         ViewPager viewPager = findViewById(R.id.viewPager);
@@ -41,6 +44,8 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
 
         TabLayout tabLayout = findViewById(R.id.tabLayout);
         tabLayout.setupWithViewPager(viewPager);
+
+        varieties = new Varieties(this, config.getServerURL() + config.VARIETIES_URL);
 
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
         if (mNfcAdapter == null) {
@@ -59,8 +64,8 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
 
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new ScanTagsFragment(), "Scan...");
-        adapter.addFragment(new WriteTagFragment(), "Write Tag");
+        adapter.addFragment(new ScanTagsFragment(), "Scan");
+        adapter.addFragment(new WriteTagFragment(), "Update");
         adapter.addFragment(new AppConfFragment(), "Config");
         viewPager.setAdapter(adapter);
     }
