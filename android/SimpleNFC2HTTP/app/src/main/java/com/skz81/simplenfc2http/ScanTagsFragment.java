@@ -191,4 +191,29 @@ public class ScanTagsFragment extends Fragment
             }
         }
     }
+
+    private class LoadImageTask extends AsyncTask<String, Void, Bitmap> {
+        private ImageView view = null;
+
+        public LoadImageTask(ImageView view) {
+            this.view = view
+        }
+        @Override
+        protected Bitmap doInBackground(String... params) {
+            // Decode base64 string to byte array
+            byte[] decodedBytes = Base64.decode(params[0], Base64.DEFAULT);
+            // Convert byte array to Bitmap
+            InputStream inputStream = new ByteArrayInputStream(decodedBytes);
+            return BitmapFactory.decodeStream(inputStream);
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+            // Set the bitmap to the ImageView
+            if (bitmap != null && view != null) {
+                view.setImageBitmap(bitmap);
+            }
+        }
+    }
 }
