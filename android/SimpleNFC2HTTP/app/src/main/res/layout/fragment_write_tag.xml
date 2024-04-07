@@ -47,20 +47,28 @@
         android:hint="Yielding"
         android:focusable="false" />
 
-    <!-- Generate ID Button -->
+    <!--  Update Info on server -->
     <Button
-        android:id="@+id/generateIdButton"
+        android:id="@+id/updateInfoButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Generate ID"
+        android:text="Update Server"
         android:layout_marginTop="16dp" />
 
-    <!-- Write Tag Button -->
+    <!--  Scan Tag Button -->
     <Button
-        android:id="@+id/writeTagButton"
+        android:id="@+id/scanTagButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Write Tag"
+        android:text="Scan Tag"
+        android:layout_marginTop="16dp" />
+
+    <!--  Button -->
+    <Button
+        android:id="@+id/newPlantButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="New plant - format Tag"
         android:layout_marginTop="16dp" />
 
 </LinearLayout>
