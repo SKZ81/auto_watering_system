@@ -3,8 +3,6 @@ package com.skz81.simplenfc2http;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.util.Log;
@@ -39,19 +37,15 @@ public class WriteTagFragment extends Fragment {
         private String appName = null;
         private WriteTagFragment parent;
 
-        public NdefWriteListener(WriteTagFragment fragment) {
-            parent = fragment;
-            try {
-                Context context = parent.getContext();
-                PackageManager packageManager = context.getPackageManager();
-                ApplicationInfo applicationInfo = packageManager.getApplicationInfo(context.getPackageName(), 0);
-                appName = (String) packageManager.getApplicationLabel(applicationInfo);
-            } catch (PackageManager.NameNotFoundException e) {
-                appName = "NOT_FOUND";
-            }
+        public NdefWriteListener(WriteTagFragment fragment, String appName) {
+            this.parent = fragment;
+            this.appName = appName;
         }
         @Override
         public void onNDEFDiscovered(Ndef ndef) {
+            Log.i(TAG, "in Writer:onNDEFDiscovered, write tag info");
+            Log.i(TAG, "UUID: " + parent.getNewUUID());
+            Log.i(TAG, "AppName: " + appName);
             NdefMessage message = new NdefMessage(
                     NdefRecord.createTextRecord("", parent.getNewUUID()),
                     NdefRecord.createTextRecord("", appName)
@@ -65,9 +59,6 @@ public class WriteTagFragment extends Fragment {
                 if (!ndef.isConnected()) {
                     throw new IOException("NFC connection lost");
                 }
-
-                // update_server()...
-
             } catch (Exception e) {
                 // Log error message
                 Log.e(TAG, "Error writing NDEF messages: " + e.getMessage(), e);
@@ -97,12 +88,14 @@ public class WriteTagFragment extends Fragment {
         public void onNDEFDiscovered(Ndef ndef) {
             NdefMessage message = ndef.getCachedNdefMessage();
             NdefRecord[] records = message.getRecords();
-            for (int j = 0; j < records.length; j++) {
-                NdefRecord record = records[j];
-                Log.i(TAG, "  Record " + (j + 1) + ":");
-                Log.i(TAG, "    TNF (Type Name Format): " + record.getTnf());
-                Log.i(TAG, "    Type: " + new String(record.getType()));
-                Log.i(TAG, "    Payload: " + new String(record.getPayload()));
+            if (records != null) {
+                for (int j = 0; j < records.length; j++) {
+                    NdefRecord record = records[j];
+                    Log.i(TAG, "  Record " + (j + 1) + ":");
+                    Log.i(TAG, "    TNF (Type Name Format): " + record.getTnf());
+                    Log.i(TAG, "    Type: " + new String(record.getType()));
+                    Log.i(TAG, "    Payload: " + new String(record.getPayload()));
+                }
             }
             try {
                 ndef.close();
@@ -171,7 +164,7 @@ public class WriteTagFragment extends Fragment {
         addDateFieldListener(yieldingDateEdit);
 
         ndefReader = new NdefReadListener(this);
-        ndefWriter = new NdefWriteListener(this);
+        ndefWriter = new NdefWriteListener(this, mainActivity.appName());
 
         // Populate variety spinner with dummy values
         // TODO : use the HTTP to get the list with images (and info URL)
@@ -269,7 +262,7 @@ public class WriteTagFragment extends Fragment {
         int year = calendar.get(Calendar.YEAR);
         int month = calendar.get(Calendar.MONTH);
         int day = calendar.get(Calendar.DAY_OF_MONTH);
-                        // Process the selected date based on the field id
+        // Process the selected date based on the field id
         // switch (fieldId) {
         //     case R.id.yieldingDateEdit:
         //         break;

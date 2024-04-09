@@ -5,7 +5,9 @@ import android.content.Context;
 
 public class AppConfiguration {
 
+    // public static final String VARIETIES_URL = "/varieties";
     public static final String VARIETIES_URL = "/cgi-bin/draft.py";
+    public static final String PLANT_SEARCH_ID = "/plants/search_id";
 
     private static AppConfiguration instance = null;
     private static SharedPreferences sharedPreferences = null;
@@ -33,7 +35,7 @@ public class AppConfiguration {
         if (instance == null && sharedPreferences != null) {
             instance = new AppConfiguration();
         }
-        return instance; // beware sharedPreferences is well initialized
+        return instance;
     }
 
     public void save() {

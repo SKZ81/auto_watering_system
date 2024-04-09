@@ -1,6 +1,9 @@
 package com.skz81.simplenfc2http;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.nfc.tech.Ndef;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
@@ -24,11 +27,16 @@ import com.skz81.simplenfc2http.Varieties;
 public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderCallback {
     private static final String TAG = "AutoWatS-NFC";
 
+    private String appName;
     private NfcAdapter mNfcAdapter;
     private TextView mTextView;
     private NdefTagCallback tagCB;
     private AppConfiguration config;
     private Varieties varieties;
+
+
+    public String appName() {return appName;}
+    public Varieties varieties() {return varieties;}
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +54,13 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
         tabLayout.setupWithViewPager(viewPager);
 
         varieties = new Varieties(this, config.getServerURL() + config.VARIETIES_URL);
+        try {
+            PackageManager packageManager = this.getPackageManager();
+            ApplicationInfo applicationInfo = packageManager.getApplicationInfo(this.getPackageName(), 0);
+            appName = (String) packageManager.getApplicationLabel(applicationInfo);
+        } catch (PackageManager.NameNotFoundException e) {
+            appName = "APPNAME_NOT_FOUND";
+        }
 
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
         if (mNfcAdapter == null) {

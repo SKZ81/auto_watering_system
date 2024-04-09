@@ -23,24 +23,33 @@ import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.skz81.simplenfc2http.AppConfiguration;
 import com.skz81.simplenfc2http.MainActivity;
 import com.skz81.simplenfc2http.NdefTagCallback;
+import com.skz81.simplenfc2http.SendToServerTask;
 
 public class ScanTagsFragment extends Fragment
-                              implements NdefTagCallback,
-                                         SendToServerTask.ReplyCB {
+                              implements NdefTagCallback {
     private static final String TAG = "AutoWatS-NFC-scan";
 
     private MainActivity mainActivity;
+    private SendToServerTask serverTask = null;
 
     private ImageView varietyIcon;
     private TextView varietyName;
@@ -49,9 +58,7 @@ public class ScanTagsFragment extends Fragment
     private TextView bloomingDate;
     private TextView yieldingDate;
 
-    public ScanTagsFragment() {
-        // Required empty public constructor
-    }
+    public ScanTagsFragment() {}
 
     @Nullable
     @Override
@@ -71,14 +78,12 @@ public class ScanTagsFragment extends Fragment
         germinationDate.setText("Germination : date");
         bloomingDate.setText("Blooming : date");
         yieldingDate.setText("Yielding : date");
+        // varietyIcon.setImageResource(R.drawable.your_image); // Replace 'your_image' with your image resource
 
         mainActivity = (MainActivity) getActivity();
         if (mainActivity != null) {
             mainActivity.startNFCScan(this);
         }
-
-        // Set image resource
-        // varietyIcon.setImageResource(R.drawable.your_image); // Replace 'your_image' with your image resource
 
         return view;
     }
@@ -104,66 +109,74 @@ public class ScanTagsFragment extends Fragment
         if (mainActivity != null) {
             mainActivity.stopNFCScan();
         }
+        if (serverTask != null) {
+            serverTask.cancel(true);
+        }
         super.onDestroyView();
     }
 
     @Override
     public void onNDEFDiscovered(Ndef ndef) {
-        List<NdefMessage> messages = new ArrayList<>();
+        NdefMessage message = ndef.getCachedNdefMessage();
+
         try {
-            ndef.connect();
-            if (ndef.isConnected()) {
-                // Read all NDEF messages
-                NdefMessage message;
-                while ((message = ndef.getNdefMessage()) != null) {
-                    messages.add(message);
-                }
-            }
-            // check we're still connected
-            if (!ndef.isConnected()) {
-                throw new IOException("NFC connection lost while reading tag");
-            }
+            ndef.close();
         } catch (Exception e) {
-            // Log error message
-            Log.e(TAG, "Error reading NDEF messages: " + e.getMessage(), e);
-            messages.clear();
-            Toast.makeText(mainActivity, "Error reading tag, please retry", Toast.LENGTH_LONG).show();
-        } finally {
-            try {
-                ndef.close();
-            } catch (Exception e) {
-                Log.w(TAG, "Error closing NDEF connection: " + e.getMessage(), e);
-            }
+            Log.w(TAG, "Error closing NDEF connection: " + e.getMessage(), e);
         }
-        for (int i = 0; i < messages.size(); i++) {
-            NdefMessage message = messages.get(i);
-            Log.i(TAG, "Message " + (i + 1) + ":");
 
-            // Iterate through each NDEF record within the message
+
+        try {
+            AppConfiguration config = AppConfiguration.instance();
+            Map<String, String> params = new HashMap<>();
+
             NdefRecord[] records = message.getRecords();
-            for (int j = 0; j < records.length; j++) {
-                NdefRecord record = records[j];
-                Log.i(TAG, "  Record " + (j + 1) + ":");
-                Log.i(TAG, "    TNF (Type Name Format): " + record.getTnf());
-                Log.i(TAG, "    Type: " + new String(record.getType()));
-                Log.i(TAG, "    Payload: " + new String(record.getPayload()));
+            if (records == null || records.length < 2) {
+                throw new IOException("Bad TAG format: no message or not enough records");
             }
+            if (records[0].getType().equals("T") ||
+                records[1].getPayload().equals(mainActivity.appName())) {
+                throw new IOException("Bad TAG format: bad record type/content");
+            }
+            if (serverTask != null) {
+                serverTask.cancel(true);
+            }
+
+            params.put("uuid", new String(records[0].getPayload(), StandardCharsets.UTF_8));
+            serverTask = new SendToServerTask(new SendToServerTask.ReplyCB() {
+                @Override
+                public void onReplyFromServer(String data) {
+                    setTabFieldsFromJSON(data);
+                }
+
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "Error fetching varieties: " + error);
+                }
+            });
+            serverTask.GET(config.getServerURL() + config.PLANT_SEARCH_ID, params);
+        } catch (IOException e) {
+            Log.e(TAG, "Error scanning tag:" + e.getMessage());
         }
     }
 
-    private void sendToServer(String url, String data) {
-        new SendToServerTask(this).POST(url, data);
-    }
-
-    @Override
-    public void onReplyFromServer(String data) {
-        Log.i(TAG, "Got answer from server:\n" + data);
-    }
-
-    @Override
-    public void onError(String error) {
-        Toast.makeText(mainActivity, "Can't get TAG data from server:\n" + error,
-                       Toast.LENGTH_LONG).show();
+    private void setTabFieldsFromJSON(String json) {
+        if (json == null) return; // filter error case (should not happend)
+        try {
+            Log.d(TAG, "Got JSON:\n" + json);
+            JSONArray jsonArray = new JSONArray(json);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                int variety_id = jsonObject.getInt("variety");
+                varietyName.setText(mainActivity.varieties().getNameById(variety_id, "not available"));
+                plantId.setText(jsonObject.getString("UUID"));
+                germinationDate.setText(jsonObject.getString("germination_date"));
+                bloomingDate.setText(jsonObject.getString("blooming_date"));
+                yieldingDate.setText(jsonObject.getString("yielding_date"));
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing JSON data: " + e.getMessage());
+        }
     }
 
     private class LoadImageTask extends AsyncTask<String, Void, Bitmap> {
@@ -175,9 +188,7 @@ public class ScanTagsFragment extends Fragment
 
         @Override
         protected Bitmap doInBackground(String... params) {
-            // Decode base64 string to byte array
             byte[] decodedBytes = Base64.decode(params[0], Base64.DEFAULT);
-            // Convert byte array to Bitmap
             InputStream inputStream = new ByteArrayInputStream(decodedBytes);
             return BitmapFactory.decodeStream(inputStream);
         }
@@ -185,32 +196,6 @@ public class ScanTagsFragment extends Fragment
         @Override
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
-            // Set the bitmap to the ImageView
-            if (bitmap != null && view != null) {
-                view.setImageBitmap(bitmap);
-            }
-        }
-    }
-
-    private class LoadImageTask extends AsyncTask<String, Void, Bitmap> {
-        private ImageView view = null;
-
-        public LoadImageTask(ImageView view) {
-            this.view = view
-        }
-        @Override
-        protected Bitmap doInBackground(String... params) {
-            // Decode base64 string to byte array
-            byte[] decodedBytes = Base64.decode(params[0], Base64.DEFAULT);
-            // Convert byte array to Bitmap
-            InputStream inputStream = new ByteArrayInputStream(decodedBytes);
-            return BitmapFactory.decodeStream(inputStream);
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            super.onPostExecute(bitmap);
-            // Set the bitmap to the ImageView
             if (bitmap != null && view != null) {
                 view.setImageBitmap(bitmap);
             }

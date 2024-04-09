@@ -45,7 +45,7 @@ public class Varieties implements SendToServerTask.ReplyCB {
     public Varieties(MainActivity parent, String url) {
         this.activity = parent;
         this.varieties = new ArrayList<>();
-        new SendToServerTask(this).GET("", url);
+        new SendToServerTask(this).GET(url, null);
     }
 
     @Override
@@ -87,7 +87,21 @@ public class Varieties implements SendToServerTask.ReplyCB {
         }
     }
 
-    public List<Variety> get() {
+    public List<Variety> getAll() {
         return varieties;
+    }
+
+    public Variety getById(int id) {
+        for (Variety variety : varieties) {
+            if (variety.id() == id) {
+                return variety;
+            }
+        }
+        return null; // Variety not found
+    }
+
+    public String getNameById(int id, String defaultVal) {
+        Variety variety = getById(id);
+        return variety == null ? defaultVal : variety.name;
     }
 }
