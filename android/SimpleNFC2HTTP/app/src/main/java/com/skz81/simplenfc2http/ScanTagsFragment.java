@@ -10,6 +10,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -54,6 +56,7 @@ public class ScanTagsFragment extends Fragment
     private ImageView varietyIcon;
     private TextView varietyName;
     private TextView plantId;
+    private RadioGroup genderRadioGroup;
     private TextView germinationDate;
     private TextView bloomingDate;
     private TextView yieldingDate;
@@ -68,6 +71,7 @@ public class ScanTagsFragment extends Fragment
         varietyIcon = view.findViewById(R.id.varietyIcon);
         varietyName = view.findViewById(R.id.varietyName);
         plantId = view.findViewById(R.id.plantId);
+        genderRadioGroup = view.findViewById(R.id.genderRadioGroup);
         germinationDate = view.findViewById(R.id.germinationDate);
         bloomingDate = view.findViewById(R.id.bloomingDate);
         yieldingDate = view.findViewById(R.id.yieldingDate);

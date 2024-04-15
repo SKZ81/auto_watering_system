@@ -30,27 +30,27 @@
         android:orientation="horizontal">
 
         <RadioButton
-            android:id="@+id/femaleRadioButton"
+            android:id="@+id/unknownRadioButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textStyle="bold"
-            android:textSize="22sp"
-            android:text="♀" />
+            android:textSize="16sp"
+            android:text="❓" />
 
         <RadioButton
             android:id="@+id/maleRadioButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textStyle="bold"
-            android:textSize="22sp"
+            android:textSize="28sp"
             android:text="♂" />
 
         <RadioButton
-            android:id="@+id/unknownRadioButton"
+            android:id="@+id/femaleRadioButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="22sp"
-            android:text="❓" />
+            android:textStyle="bold"
+            android:textSize="28sp"
+            android:text="♀" />
 
     </RadioGroup>
 

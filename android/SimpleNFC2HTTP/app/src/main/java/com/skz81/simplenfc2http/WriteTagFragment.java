@@ -11,8 +11,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.DatePicker;
+import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -121,6 +123,7 @@ public class WriteTagFragment extends Fragment {
 
     private EditText plantId;
     private Spinner varietySpinner;
+    private RadioGroup genderRadioGroup;
     private EditText germinationDateEdit;
     private EditText bloomingDateEdit;
     private EditText yieldingDateEdit;
@@ -155,6 +158,7 @@ public class WriteTagFragment extends Fragment {
 
         plantId = view.findViewById(R.id.plantId);
         varietySpinner = view.findViewById(R.id.varietySpinner);
+        genderRadioGroup = view.findViewById(R.id.genderRadioGroup);
         germinationDateEdit = view.findViewById(R.id.germinationDateEdit);
         bloomingDateEdit = view.findViewById(R.id.bloomingDateEdit);
         yieldingDateEdit = view.findViewById(R.id.yieldingDateEdit);
