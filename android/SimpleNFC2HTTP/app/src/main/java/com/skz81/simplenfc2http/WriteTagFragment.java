@@ -21,9 +21,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import java.io.IOException;
-import java.util.UUID;
 import java.util.Calendar;
-
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import android.nfc.tech.Ndef;
 import android.nfc.NdefRecord;
 import android.nfc.NdefMessage;
@@ -235,7 +236,7 @@ public class WriteTagFragment extends Fragment {
         updateInfoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                buttoUpdateInfoClicked();
+                buttonUpdateInfoClicked();
             }
         });
 
@@ -284,7 +285,31 @@ public class WriteTagFragment extends Fragment {
         scanTagDialog.show();
     }
 
-    void buttoUpdateInfoClicked() {
+    void buttonUpdateInfoClicked() {
+        VarietyItem variety = (VarietyItem) varietySpinner.getSelectedItem();
+
+        JSONObject json_data = new JSONObject();
+        try {
+            json_data.put("ID", plantId.getText());
+            json_data.put("variety", variety.id());
+            json_data.put("sex", genderRadioGroup.getCheckedRadioButtonId());
+            json_data.put("germination_date", germinationDateEdit.getText());
+            json_data.put("blooming_date", bloomingDateEdit.getText());
+            json_data.put("yielding_date", yieldingDateEdit.getText());
+        } catch (JSONException e) {
+            Log.e(TAG, "Error while serializing UPDATE req JSON param: " + e.getMessage());
+        }
+        new SendToServerTask(new SendToServerTask.ReplyCB() {
+            @Override public void onReplyFromServer(String data) {
+                if (data == "OK") {
+                    Toast.makeText(mainActivity, "Tag data updated !", Toast.LENGTH_LONG).show();
+                }
+            }
+            @Override public void onError(String error) {
+                Log.e(TAG, "Error while updating tag: " + error);
+                Toast.makeText(mainActivity, "Error while updating tag: " + error, Toast.LENGTH_LONG).show();
+            }
+        }).POST(config.getServerURL() + config.UPDATE_PLANT_URL, json_data.toString());
     }
 
     public void stopScan() {
