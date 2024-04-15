@@ -2,7 +2,6 @@ package com.skz81.simplenfc2http;
 
 import android.util.Base64;
 import android.util.Log;
-import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -43,14 +42,14 @@ public class Varieties implements SendToServerTask.ReplyCB {
         public int bloomingTimeDays() {return bloomingTimeDays;}
     }
 
-    private MainActivity activity;
+    private MainActivity mainActivity;
     private List<Variety> varieties;
     private String server;
     private String imagesURLPrefix;
 
     public Varieties(MainActivity parent, String server,
                      String varietiesURL, String imagesURLPrefix) {
-        this.activity = parent;
+        this.mainActivity = parent;
         this.varieties = new ArrayList<>();
         this.server = server;
         this.imagesURLPrefix = imagesURLPrefix;
@@ -76,25 +75,14 @@ public class Varieties implements SendToServerTask.ReplyCB {
                 fetchVarietyImage(variety, server + imagesURLPrefix + photoUrl);
             }
         } catch (JSONException e) {
-            Log.e(TAG, "Error parsing JSON data: " + e.getMessage());
+            mainActivity.dumpError(TAG, "Error parsing varieties JSON data: " + e.getMessage());
             varieties = null;
         }
     }
 
     @Override
     public void onError(String error) {
-        Log.e(TAG, "Can't fetch varieties: " + error);
-        if (activity != null) {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(activity,
-                                "Cant fetch varieties:\n" + error,
-                                Toast.LENGTH_LONG
-                                ).show();
-                }
-            });
-        }
+        mainActivity.dumpError(TAG, "Can't fetch varieties: " + error);
     }
 
     public List<Variety> getAll() {

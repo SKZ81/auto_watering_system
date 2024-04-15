@@ -38,6 +38,25 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
     public String appName() {return appName;}
     public Varieties varieties() {return varieties;}
 
+    public void dumpError(String tag, String message) {
+        toastDisplay(tag, message, true);
+    }
+
+    public void toastDisplay(String tag, String message, boolean longDuration) {
+        MainActivity mainActivity = this;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Log.e(tag, message);
+                Toast.makeText(mainActivity, message,
+                               longDuration ?
+                                    Toast.LENGTH_SHORT :
+                                    Toast.LENGTH_LONG
+                              ).show();
+            }
+        });
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "is starting...");

@@ -92,15 +92,17 @@ public class WriteTagFragment extends Fragment {
             catch (JSONException e) {
                 Log.e(TAG, "Error serializing JSON for create tag:" + e.getMessage());
             }
+            Log.d(TAG, "Send JSON to server for tag ID creation:" + json_data.toString());
             new SendToServerTask(new SendToServerTask.ReplyCB() {
                 @Override public void onReplyFromServer(String data) {
-                    if (data == null || data != "OK") {displayError("not 'OK' reply");}
+                    if (data == null || data != "OK") {
+                        parent.mainActivity.dumpError(TAG,
+                                "not 'OK' reply from server (create tag ID)");
+                    }
+                    Log.d(TAG, "Tag ID=" + parent.getNewUUID() + " created on server.");
                 }
-                @Override public void onError(String error) {displayError(error);}
-
-                private void  displayError(String error) {
-                    Log.e(TAG, "Can't create tag in server DB:" + error);
-                    // Toast.makeText(parent.mainActivity, "Can't create tag in server DB:" + error, Toast.LENGTH_LONG).show();
+                @Override public void onError(String error) {
+                    parent.mainActivity.dumpError(TAG, "Can't create tag in server DB:" + error);
                 }
             }).POST(config.getServerURL() + config.CREATE_TAG_URL, json_data.toString());
         }
@@ -256,6 +258,7 @@ public class WriteTagFragment extends Fragment {
                         }
                         dialog.dismiss();
                         scanTagDialog = null;
+                        newUUID = null;
                     }
                 });
         if (mainActivity != null) {
