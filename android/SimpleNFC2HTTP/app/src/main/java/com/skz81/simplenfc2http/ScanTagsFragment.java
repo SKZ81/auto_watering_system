@@ -133,6 +133,7 @@ public class ScanTagsFragment extends Fragment
         try {
             AppConfiguration config = AppConfiguration.instance();
             Map<String, String> params = new HashMap<>();
+            String uuid = null;
 
             NdefRecord[] records = message.getRecords();
             if (records == null || records.length < 2) {
@@ -145,17 +146,23 @@ public class ScanTagsFragment extends Fragment
             if (serverTask != null) {
                 serverTask.cancel(true);
             }
-
-            params.put("uuid", new String(records[0].getPayload(), StandardCharsets.UTF_8));
+            uuid = records[0].getPayload().toString();
+            params.put("uuid", uuid);
             serverTask = new SendToServerTask(new SendToServerTask.ReplyCB() {
+                @Override
+                public void onRequestFailure(int errorCode) {
+                    if (errorCode == 404 && mainActivity != null) {
+                        Log.e(TAG, "Unknown Tag...");
+                        // Toast.makeText(mainActivity, "Unknown Tag...", Toast.LENGTH_LONG).show();
+                    }
+                }
                 @Override
                 public void onReplyFromServer(String data) {
                     setTabFieldsFromJSON(data);
                 }
-
                 @Override
                 public void onError(String error) {
-                    Log.e(TAG, "Error fetching varieties: " + error);
+                    Log.e(TAG, "Error fetching data: " + error);
                 }
             });
             serverTask.GET(config.getServerURL() + config.PLANT_SEARCH_ID, params);
