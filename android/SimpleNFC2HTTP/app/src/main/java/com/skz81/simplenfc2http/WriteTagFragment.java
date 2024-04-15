@@ -30,6 +30,9 @@ import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.skz81.simplenfc2http.AppConfiguration;
 import com.skz81.simplenfc2http.MainActivity;
@@ -83,6 +86,22 @@ public class WriteTagFragment extends Fragment {
                 scanTagDialog = null;
             }
             parent.stopScan();
+            JSONObject json_data = new JSONObject();
+            try {json_data.put("uuid", parent.getNewUUID());}
+            catch (JSONException e) {
+                Log.e(TAG, "Error serializing JSON for create tag:" + e.getMessage());
+            }
+            new SendToServerTask(new SendToServerTask.ReplyCB() {
+                @Override public void onReplyFromServer(String data) {
+                    if (data == null || data != "OK") {displayError("not 'OK' reply");}
+                }
+                @Override public void onError(String error) {displayError(error);}
+
+                private void  displayError(String error) {
+                    Log.e(TAG, "Can't create tag in server DB:" + error);
+                    // Toast.makeText(parent.mainActivity, "Can't create tag in server DB:" + error, Toast.LENGTH_LONG).show();
+                }
+            }).POST(config.getServerURL() + config.CREATE_TAG_URL, json_data.toString());
         }
     }
 
