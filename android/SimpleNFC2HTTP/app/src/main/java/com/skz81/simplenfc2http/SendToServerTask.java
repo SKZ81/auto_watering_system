@@ -3,6 +3,7 @@ package com.skz81.simplenfc2http;
 import android.os.AsyncTask;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -19,6 +20,23 @@ class SendToServerTask extends AsyncTask<String, Void, String> {
     private boolean error = false;
 
     public interface ReplyCB {
+        default String decodeServerResponse(InputStream input) {
+            StringBuilder reply = new StringBuilder();
+            try {
+                BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(input));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    reply.append(line).append("\n");
+                }
+            } catch (IOException e) {
+                onError(e.getMessage());
+                return null;
+            }
+            return reply.toString();
+        }
+
+        default void onRequestFailure(int errorCode) {}
         void onReplyFromServer(String data);
         void onError(String error);
     }
@@ -46,6 +64,10 @@ class SendToServerTask extends AsyncTask<String, Void, String> {
         execute("GET", url + queryString.toString());
     }
 
+    public void POST(String url, String param) {
+        execute("POST", url, param);
+    }
+
     public void POST(String url, Map<String, String> params) {
         String str_params = "";
 
@@ -62,8 +84,7 @@ class SendToServerTask extends AsyncTask<String, Void, String> {
                 }
             }
         }
-
-        execute("POST", url, str_params);
+        POST(url, str_params);
     }
 
     @Override
@@ -86,12 +107,13 @@ class SendToServerTask extends AsyncTask<String, Void, String> {
 
         HttpURLConnection urlConnection = null;
         BufferedReader reader = null;
-        StringBuilder reply = new StringBuilder();
+        String reply;
 
         try {
             URL url = new URL(params[1]);
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod(params[0]);
+            urlConnection.setConnectTimeout(5000);
 
             // Set request headers for POST method
             if (params[0].equals("POST")) {
@@ -99,26 +121,23 @@ class SendToServerTask extends AsyncTask<String, Void, String> {
             }
 
             // Set request body if provided for POST method
-            if (params[0].equals("POST") && params[3] != null && !params[3].isEmpty()) {
+            if (params[0].equals("POST") && params[2] != null && !params[2].isEmpty()) {
                 urlConnection.setDoOutput(true);
                 urlConnection.setChunkedStreamingMode(0);
                 OutputStream out = urlConnection.getOutputStream();
-                out.write(params[3].getBytes());
+                out.write(params[2].getBytes());
                 out.flush();
                 out.close();
             }
 
             int responseCode = urlConnection.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
+                if (replyCallback != null) {
+                    replyCallback.onRequestFailure(responseCode);
+                }
                 throw new IOException("Server response code: " + responseCode);
             }
-
-            // Read the response
-            reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                reply.append(line).append("\n");
-            }
+            reply = replyCallback.decodeServerResponse(urlConnection.getInputStream());
         } catch (IOException e) {
             error = true;
             if (replyCallback != null) {
@@ -135,11 +154,11 @@ class SendToServerTask extends AsyncTask<String, Void, String> {
                 }
             } catch (Exception e) {
                 if (replyCallback != null) {
-                    replyCallback.onError("Error while HTTP connection: " + e.getMessage());
+                    replyCallback.onError("Error during HTTP connection: " + e.getMessage());
                 }
             }
         }
-        return reply.toString();
+        return reply;
     }
 
 

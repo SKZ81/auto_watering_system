@@ -29,17 +29,22 @@ import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 
+import com.skz81.simplenfc2http.AppConfiguration;
 import com.skz81.simplenfc2http.MainActivity;
+import com.skz81.simplenfc2http.SendToServerTask;
 
 
 public class WriteTagFragment extends Fragment {
     protected class NdefWriteListener implements NdefTagCallback {
         private String appName = null;
         private WriteTagFragment parent;
+        private AppConfiguration config;
 
-        public NdefWriteListener(WriteTagFragment fragment, String appName) {
+        public NdefWriteListener(WriteTagFragment fragment, String appName,
+                                 AppConfiguration config) {
             this.parent = fragment;
             this.appName = appName;
+            this.config = config;
         }
         @Override
         public void onNDEFDiscovered(Ndef ndef) {
@@ -112,6 +117,8 @@ public class WriteTagFragment extends Fragment {
 
     private static final String TAG = "AutoWatS-NFC-write";
 
+    private AppConfiguration config;
+
     private EditText plantId;
     private Spinner varietySpinner;
     private EditText germinationDateEdit;
@@ -130,8 +137,7 @@ public class WriteTagFragment extends Fragment {
     private NdefReadListener ndefReader;
     private NdefWriteListener ndefWriter;
 
-    public WriteTagFragment() {
-    }
+    public WriteTagFragment() {}
 
     private void addDateFieldListener(EditText textview) {
         textview.setOnClickListener(new View.OnClickListener() {
@@ -155,8 +161,8 @@ public class WriteTagFragment extends Fragment {
         updateInfoButton = view.findViewById(R.id.updateInfoButton);
         scanTagButton = view.findViewById(R.id.scanTagButton);
         newPlantButton = view.findViewById(R.id.newPlantButton);
-
         calendar = Calendar.getInstance();
+        config = AppConfiguration.instance();
         mainActivity = (MainActivity) getActivity();
 
         addDateFieldListener(germinationDateEdit);
@@ -164,7 +170,7 @@ public class WriteTagFragment extends Fragment {
         addDateFieldListener(yieldingDateEdit);
 
         ndefReader = new NdefReadListener(this);
-        ndefWriter = new NdefWriteListener(this, mainActivity.appName());
+        ndefWriter = new NdefWriteListener(this, mainActivity.appName(), config);
 
         // Populate variety spinner with dummy values
         // TODO : use the HTTP to get the list with images (and info URL)

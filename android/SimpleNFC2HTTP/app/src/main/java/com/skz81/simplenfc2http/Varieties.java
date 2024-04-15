@@ -39,18 +39,23 @@ public class Varieties implements SendToServerTask.ReplyCB {
         public int bloomingTimeDays() {return bloomingTimeDays;}
     }
 
-    private List<Variety> varieties = null;
-    private MainActivity activity = null;
+    private MainActivity activity;
+    private List<Variety> varieties;
+    private String server;
+    private String imagesURLPrefix;
 
-    public Varieties(MainActivity parent, String url) {
+    public Varieties(MainActivity parent, String server,
+                     String varietiesURL, String imagesURLPrefix) {
         this.activity = parent;
         this.varieties = new ArrayList<>();
-        new SendToServerTask(this).GET(url, null);
+        this.server = server;
+        this.imagesURLPrefix = imagesURLPrefix;
+        new SendToServerTask(this).GET(server + varietiesURL, null);
     }
 
     @Override
     public void onReplyFromServer(String data) {
-        if (data == null) return; // error case
+        if (data == null) return; // filter error case (should not happend)
 
         try {
             Log.d(TAG, "Got JSON:\n" + data);

@@ -53,7 +53,8 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
         TabLayout tabLayout = findViewById(R.id.tabLayout);
         tabLayout.setupWithViewPager(viewPager);
 
-        varieties = new Varieties(this, config.getServerURL() + config.VARIETIES_URL);
+        varieties = new Varieties(this, config.getServerURL(),
+                                  config.VARIETIES_URL, config.VARIETIES_IMG_URL);
         try {
             PackageManager packageManager = this.getPackageManager();
             ApplicationInfo applicationInfo = packageManager.getApplicationInfo(this.getPackageName(), 0);
