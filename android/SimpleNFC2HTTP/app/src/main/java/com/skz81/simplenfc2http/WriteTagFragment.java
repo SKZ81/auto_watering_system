@@ -117,6 +117,19 @@ public class WriteTagFragment extends Fragment {
         }
     }
 
+    private class VarietyItem {
+        private String label;
+        private int id;
+
+        public VarietyItem(String label, int id) {
+            this.label = label;
+            this.id= id;
+        }
+        public String label() {return label;}
+        public int id() {return id;}
+        @Override public String toString() {return label;}
+    }
+
     private static final String TAG = "AutoWatS-NFC-write";
 
     private AppConfiguration config;
@@ -176,16 +189,10 @@ public class WriteTagFragment extends Fragment {
         ndefReader = new NdefReadListener(this);
         ndefWriter = new NdefWriteListener(this, mainActivity.appName(), config);
 
-        // Populate variety spinner with dummy values
-        // TODO : use the HTTP to get the list with images (and info URL)
-        String[] varieties = {
-            "Rose Bouquet",
-            "Lily Garden",
-            "Sunflower Fields",
-            "Orchid Paradise",
-            "Daisy Meadow"};
-
-        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, varieties);
+        VarietyItem[] varieties = mainActivity.varieties().getAll().stream()
+                .map(variety -> new VarietyItem(variety.name(), variety.id()))
+                .toArray(VarietyItem[]::new);
+        ArrayAdapter<VarietyItem> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, varieties);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         varietySpinner.setAdapter(adapter);
 
