@@ -177,6 +177,8 @@ public class ScanTagsFragment extends Fragment
                 germinationDate.setText(jsonObject.getString("germination_date"));
                 bloomingDate.setText(jsonObject.getString("blooming_date"));
                 yieldingDate.setText(jsonObject.getString("yielding_date"));
+                new LoadImageTask(varietyIcon).execute(
+                    mainActivity.varieties().getImageById(variety_id));
             }
         } catch (JSONException e) {
             Log.e(TAG, "Error parsing JSON data: " + e.getMessage());

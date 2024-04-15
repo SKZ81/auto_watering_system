@@ -1,14 +1,17 @@
 package com.skz81.simplenfc2http;
 
+import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 
 import com.skz81.simplenfc2http.MainActivity;
 import com.skz81.simplenfc2http.SendToServerTask;
@@ -22,6 +25,7 @@ public class Varieties implements SendToServerTask.ReplyCB {
         private String name;
         private String shortDescription;
         private String photoUrl;
+        private String image_base64; // TODO : have directly a Bitmap here
         private int bloomingTimeDays;
 
         public Variety(int id, String name, String shortDescription, String photoUrl, int bloomingTimeDays) {
@@ -69,6 +73,7 @@ public class Varieties implements SendToServerTask.ReplyCB {
                 int bloomingTimeDays = jsonObject.getInt("blooming_time_days");
                 Variety variety = new Variety(id, name, shortDescription, photoUrl, bloomingTimeDays);
                 varieties.add(variety);
+                fetchVarietyImage(variety, server + imagesURLPrefix + photoUrl);
             }
         } catch (JSONException e) {
             Log.e(TAG, "Error parsing JSON data: " + e.getMessage());
@@ -108,5 +113,45 @@ public class Varieties implements SendToServerTask.ReplyCB {
     public String getNameById(int id, String defaultVal) {
         Variety variety = getById(id);
         return variety == null ? defaultVal : variety.name;
+    }
+
+    public String getImageById(int id) {
+        Variety variety = getById(id);
+        // TODO: default image if not found ?
+        return variety == null ? "" : variety.image_base64;
+    }
+
+
+    private void fetchVarietyImage(Variety variety, String image_url) {
+        new SendToServerTask(new SendToServerTask.ReplyCB() {
+            @Override
+            public String decodeServerResponse(InputStream input) {
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                try {
+                    byte[] buffer = new byte[4096];
+                    int n;
+
+                    while ((n = input.read(buffer)) != -1)
+                    {
+                        output.write(buffer, 0, n);
+                    }
+                } catch(IOException e) {
+                    Log.e(TAG, "Error fetching image for variety " +
+                                variety.name + " (url: " + image_url +
+                                "):" + e.getMessage());
+                    return null;
+                }
+                return Base64.encodeToString(output.toByteArray(), Base64.DEFAULT);
+            }
+            @Override
+            public void onReplyFromServer(String data) {
+                Log.d(TAG, "Got BASE64 image: " + data.substring(0,63) + "...");
+                variety.image_base64 = data;
+            }
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Can't fetch variety image: " + error);
+            }
+        }).GET(image_url, null);
     }
 }
