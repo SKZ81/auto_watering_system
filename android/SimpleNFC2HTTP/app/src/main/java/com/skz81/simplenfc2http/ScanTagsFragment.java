@@ -76,12 +76,12 @@ public class ScanTagsFragment extends Fragment
         yieldingDate = view.findViewById(R.id.yieldingDate);
 
         // Set content for the labels
-        varietyName.setText("Variety");
-        plantId.setText("Tag ID : uuid");
-        germinationDate.setText("Germination : date");
-        bloomingDate.setText("Blooming : date");
-        yieldingDate.setText("Yielding : date");
         // varietyIcon.setImageResource(R.drawable.your_image); // Replace 'your_image' with your image resource
+        varietyName.setText("Variety Name");
+        plantId.setText("<UUID>");
+        germinationDate.setText("<date>");
+        bloomingDate.setText("<date>");
+        yieldingDate.setText("<date>");
 
         mainActivity = (MainActivity) getActivity();
         if (mainActivity != null) {
@@ -125,15 +125,14 @@ public class ScanTagsFragment extends Fragment
         try {
             ndef.close();
         } catch (Exception e) {
-            Log.w(TAG, "Error closing NDEF connection: " + e.getMessage(), e);
+            Log.w(TAG, "Error closing NDEF connection: " + e.getMessage());
         }
-
 
         try {
             AppConfiguration config = AppConfiguration.instance();
             Map<String, String> params = new HashMap<>();
             String uuid = null;
-
+            if (message == null) {throw new IOException("Tag is empty");}
             NdefRecord[] records = message.getRecords();
             if (records == null || records.length < 2) {
                 throw new IOException("Bad TAG format: no message or not enough records");

@@ -66,36 +66,100 @@
     </RadioGroup>
 
     <!-- List of Data Fields -->
-    <TextView
-        android:id="@+id/plantId"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:padding="8dp"
-        android:text="Tag ID : uuid" />
+        android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/germinationDate"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:padding="8dp"
-        android:text="Germination : date" />
+        <TextView
+            android:id="@+id/plantIdLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:text="UUID:"
+            android:textStyle="bold"/>
 
-    <TextView
-        android:id="@+id/bloomingDate"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:padding="8dp"
-        android:text="Blooming : date" />
+        <TextView
+            android:id="@+id/plantId"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="16sp"
+            android:padding="8dp"
+            android:typeface="monospace" />
 
-    <TextView
-        android:id="@+id/yieldingDate"
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:padding="8dp"
-        android:text="Yielding : date" />
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/germinationDateLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:text="Germination:"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/germinationDate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="18sp"
+            android:padding="8dp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/bloomingDateLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:text="Blooming:"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/bloomingDate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="18sp"
+            android:padding="8dp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/yieldingDateLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:text="Yielding:"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/yieldingDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:padding="8dp" />
+
+    </LinearLayout>
 
 </LinearLayout>
