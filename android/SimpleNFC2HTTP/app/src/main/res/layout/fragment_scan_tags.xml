@@ -39,7 +39,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="16sp"
-            android:text="❓" />
+            android:text="❓"
+            android:clickable="false"
+            android:focusable="false"/>
 
         <RadioButton
             android:id="@+id/maleRadioButton"
@@ -47,7 +49,9 @@
             android:layout_height="wrap_content"
             android:textStyle="bold"
             android:textSize="28sp"
-            android:text="♂" />
+            android:text="♂"
+            android:clickable="false"
+            android:focusable="false"/>
 
         <RadioButton
             android:id="@+id/femaleRadioButton"
@@ -55,7 +59,9 @@
             android:layout_height="wrap_content"
             android:textStyle="bold"
             android:textSize="28sp"
-            android:text="♀" />
+            android:text="♀"
+            android:clickable="false"
+            android:focusable="false"/>
 
     </RadioGroup>
 
