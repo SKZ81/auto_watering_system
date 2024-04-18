@@ -55,28 +55,72 @@
     </RadioGroup>
 
     <!-- Germination -->
-    <EditText
-        android:id="@+id/germinationDateEdit"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Germination"
-        android:focusable="false" />
+        android:orientation="horizontal">
 
+        <EditText
+            android:id="@+id/germinationDateEdit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Germination"
+            android:focusable="false" />
+
+        <ImageButton
+                android:id="@+id/germDateDelBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@android:drawable/ic_menu_delete"
+                android:contentDescription="Delete Germination Date" />
+
+    </LinearLayout>
     <!-- Blooming -->
-    <EditText
-        android:id="@+id/bloomingDateEdit"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Blooming"
-        android:focusable="false" />
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/bloomingDateEdit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Blooming"
+            android:focusable="false" />
+
+        <ImageButton
+                android:id="@+id/bloomDateDelBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@android:drawable/ic_menu_delete"
+                android:contentDescription="Delete Blooming Date" />
+
+    </LinearLayout>
 
     <!-- Yielding -->
-    <EditText
-        android:id="@+id/yieldingDateEdit"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Yielding"
-        android:focusable="false" />
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/yieldingDateEdit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Yielding"
+            android:focusable="false" />
+
+        <ImageButton
+                android:id="@+id/yieldDateDelBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@android:drawable/ic_menu_delete"
+                android:contentDescription="Delete Yielding Date" />
+
+    </LinearLayout>
 
     <!--  Update Info on server -->
     <Button

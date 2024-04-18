@@ -13,6 +13,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
@@ -38,7 +39,6 @@ import org.json.JSONObject;
 import com.skz81.simplenfc2http.AppConfiguration;
 import com.skz81.simplenfc2http.MainActivity;
 import com.skz81.simplenfc2http.SendToServerTask;
-
 
 public class WriteTagFragment extends Fragment {
     protected class NdefWriteListener implements NdefTagCallback {
@@ -160,8 +160,11 @@ public class WriteTagFragment extends Fragment {
     private Spinner varietySpinner;
     private RadioGroup genderRadioGroup;
     private EditText germinationDateEdit;
+    private ImageButton germinationDeleteButton;
     private EditText bloomingDateEdit;
+    private ImageButton bloomingDeleteButton;
     private EditText yieldingDateEdit;
+    private ImageButton yieldingDeleteButton;
     private Button updateInfoButton;
     private Button scanTagButton;
     private Button newPlantButton;
@@ -185,6 +188,14 @@ public class WriteTagFragment extends Fragment {
             }
         });
     }
+    private void addDateDeleteButtonListener(EditText textview, ImageButton btn) {
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                textview.getText().clear();
+            }
+        });
+    }
 
     @Nullable
     @Override
@@ -195,8 +206,11 @@ public class WriteTagFragment extends Fragment {
         varietySpinner = view.findViewById(R.id.varietySpinner);
         genderRadioGroup = view.findViewById(R.id.genderRadioGroup);
         germinationDateEdit = view.findViewById(R.id.germinationDateEdit);
+        germinationDeleteButton = view.findViewById(R.id.germDateDelBtn);
         bloomingDateEdit = view.findViewById(R.id.bloomingDateEdit);
+        bloomingDeleteButton = view.findViewById(R.id.bloomDateDelBtn);
         yieldingDateEdit = view.findViewById(R.id.yieldingDateEdit);
+        yieldingDeleteButton = view.findViewById(R.id.yieldDateDelBtn);
         updateInfoButton = view.findViewById(R.id.updateInfoButton);
         scanTagButton = view.findViewById(R.id.scanTagButton);
         newPlantButton = view.findViewById(R.id.newPlantButton);
@@ -207,6 +221,9 @@ public class WriteTagFragment extends Fragment {
         addDateFieldListener(germinationDateEdit);
         addDateFieldListener(bloomingDateEdit);
         addDateFieldListener(yieldingDateEdit);
+        addDateDeleteButtonListener(germinationDateEdit, germinationDeleteButton);
+        addDateDeleteButtonListener(bloomingDateEdit, bloomingDeleteButton);
+        addDateDeleteButtonListener(yieldingDateEdit, yieldingDeleteButton);
 
         ndefReader = new NdefReadListener(this);
         ndefWriter = new NdefWriteListener(this, mainActivity.appName(), config);
