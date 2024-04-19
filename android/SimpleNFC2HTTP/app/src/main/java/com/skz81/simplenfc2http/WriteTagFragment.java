@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import android.nfc.tech.Ndef;
+import android.nfc.FormatException;
 import android.nfc.NdefRecord;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
@@ -54,15 +55,37 @@ public class WriteTagFragment extends Fragment
             this.appName = appName;
             this.config = config;
         }
+
         @Override
         public void onNDEFDiscovered(Ndef ndef) {
-            Log.i(TAG, "in Writer:onNDEFDiscovered, write tag info");
-            Log.i(TAG, "UUID: " + parent.getNewUUID());
-            Log.i(TAG, "AppName: " + appName);
+            JSONObject json_data = new JSONObject();
             NdefMessage message = new NdefMessage(
                     NdefRecord.createTextRecord("", parent.getNewUUID()),
                     NdefRecord.createTextRecord("", appName)
             );
+            Log.i(TAG, "in Writer:onNDEFDiscovered, write tag info");
+            Log.i(TAG, "UUID: " + parent.getNewUUID());
+            Log.i(TAG, "AppName: " + appName);
+            try {
+                json_data.put("uuid", parent.getNewUUID());
+                NdefMessage current = ndef.getCachedNdefMessage();
+                if (current == null) {throw new IOException("Tag is empty");}
+                NdefRecord[] records = current.getRecords();
+                if (records == null || records.length < 2) {
+                    throw new IOException("Bad TAG format: no message or not enough records");
+                }
+                if (records[0].getType().equals("T") ||
+                    records[1].getPayload().equals(mainActivity.appName())) {
+                    throw new IOException("Bad TAG format: bad record type/content");
+                }
+                String old_uuid = new String(records[0].getPayload()).substring(2);
+                Log.i(TAG, "Found old tag UUID to remove:" + old_uuid);
+                json_data.put("old_uuid", old_uuid);
+            } catch (JSONException e) {
+                Log.e(TAG, "Error serializing JSON for create tag:" + e.getMessage());
+            } catch (IOException e) {
+                Log.d(TAG, "No old UUID to remove found on the tag.");
+            }
             try {
                 ndef.connect();
                 if (ndef.isConnected()) {
@@ -72,16 +95,20 @@ public class WriteTagFragment extends Fragment
                 if (!ndef.isConnected()) {
                     throw new IOException("NFC connection lost");
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 // Log error message
-                Log.e(TAG, "Error writing NDEF messages: " + e.getMessage(), e);
-                Toast.makeText(mainActivity, "Error writing tag...", Toast.LENGTH_LONG).show();
+                Log.e(TAG, "IO Error while writing NDEF messages: " + e.getMessage());
+                // Toast.makeText(mainActivity, "Error writing tag...", Toast.LENGTH_LONG).show();
+            } catch (FormatException e) {
+                // Log error message
+                Log.e(TAG, "Format Error while writing NDEF messages: " + e.getMessage());
+                // Toast.makeText(mainActivity, "Error writing tag...", Toast.LENGTH_LONG).show();
             } finally {
                 newUUID = null;
                 try {
                     ndef.close();
                 } catch (Exception e) {
-                    Log.w(TAG, "Error closing NDEF connection: " + e.getMessage(), e);
+                    Log.w(TAG, "Error closing NDEF connection: " + e.getMessage());
                 }
             }
             if (scanTagDialog != null) {
@@ -89,11 +116,6 @@ public class WriteTagFragment extends Fragment
                 scanTagDialog = null;
             }
             parent.stopScan();
-            JSONObject json_data = new JSONObject();
-            try {json_data.put("uuid", parent.getNewUUID());}
-            catch (JSONException e) {
-                Log.e(TAG, "Error serializing JSON for create tag:" + e.getMessage());
-            }
             Log.d(TAG, "Send JSON to server for tag ID creation:" + json_data.toString());
             new SendToServerTask(new SendToServerTask.ReplyCB() {
                 @Override public void onReplyFromServer(String data) {
@@ -101,7 +123,7 @@ public class WriteTagFragment extends Fragment
                         parent.mainActivity.dumpError(TAG,
                                 "not 'OK' reply from server (create tag ID)");
                     }
-                    Log.d(TAG, "Tag ID=" + parent.getNewUUID() + " created on server.");
+                    Log.d(TAG, "Tag ID=" + newUUID + " created on server.");
                 }
                 @Override public void onError(String error) {
                     parent.mainActivity.dumpError(TAG, "Can't create tag in server DB:" + error);
@@ -118,6 +140,7 @@ public class WriteTagFragment extends Fragment
         @Override
         public void onNDEFDiscovered(Ndef ndef) {
             NdefMessage message = ndef.getCachedNdefMessage();
+            if (message == null) {return;}
             NdefRecord[] records = message.getRecords();
             if (records != null) {
                 for (int j = 0; j < records.length; j++) {
