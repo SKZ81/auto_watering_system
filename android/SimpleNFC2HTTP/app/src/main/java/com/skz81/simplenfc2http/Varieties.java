@@ -19,6 +19,10 @@ public class Varieties implements SendToServerTask.ReplyCB {
 
     private static final String TAG = "AutoWatS.Varieties";
 
+    public interface UpdateListener {
+        public void onVarietiesUpdated();
+    }
+
     public class Variety {
         private int id;
         private String name;
@@ -46,6 +50,7 @@ public class Varieties implements SendToServerTask.ReplyCB {
     private List<Variety> varieties;
     private String server;
     private String imagesURLPrefix;
+    private List<UpdateListener> listeners;
 
     public Varieties(MainActivity parent, String server,
                      String varietiesURL, String imagesURLPrefix) {
@@ -53,6 +58,7 @@ public class Varieties implements SendToServerTask.ReplyCB {
         this.varieties = new ArrayList<>();
         this.server = server;
         this.imagesURLPrefix = imagesURLPrefix;
+        this.listeners = new ArrayList<> ();
         new SendToServerTask(this).GET(server + varietiesURL, null);
     }
 
@@ -73,6 +79,9 @@ public class Varieties implements SendToServerTask.ReplyCB {
                 Variety variety = new Variety(id, name, shortDescription, photoUrl, bloomingTimeDays);
                 varieties.add(variety);
                 fetchVarietyImage(variety, server + imagesURLPrefix + photoUrl);
+                for (UpdateListener listener : listeners) {
+                    listener.onVarietiesUpdated();
+                }
             }
         } catch (JSONException e) {
             mainActivity.dumpError(TAG, "Error parsing varieties JSON data: " + e.getMessage());
@@ -83,6 +92,14 @@ public class Varieties implements SendToServerTask.ReplyCB {
     @Override
     public void onError(String error) {
         mainActivity.dumpError(TAG, "Can't fetch varieties: " + error);
+    }
+
+    public void registerListerner(UpdateListener listener) {
+        listeners.add(listener);
+    }
+
+    public boolean unregisterListerner(UpdateListener listener) {
+        return listeners.remove(listener);
     }
 
     public List<Variety> getAll() {
