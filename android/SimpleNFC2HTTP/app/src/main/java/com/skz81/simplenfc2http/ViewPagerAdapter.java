@@ -2,28 +2,20 @@ package com.skz81.simplenfc2http;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.fragment.app.FragmentActivity;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ViewPagerAdapter extends FragmentPagerAdapter {
+// TBRemoved
+import android.util.Log;
+
+public class ViewPagerAdapter extends FragmentStateAdapter {
     private final List<Fragment> fragmentList = new ArrayList<>();
     private final List<String> fragmentTitleList = new ArrayList<>();
 
-    public ViewPagerAdapter(@NonNull FragmentManager fm) {
-        super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
-    }
-
-    @NonNull
-    @Override
-    public Fragment getItem(int position) {
-        return fragmentList.get(position);
-    }
-
-    @Override
-    public int getCount() {
-        return fragmentList.size();
+    public ViewPagerAdapter(@NonNull FragmentActivity fa) {
+        super(fa);
     }
 
     public void addFragment(Fragment fragment, String title) {
@@ -31,8 +23,17 @@ public class ViewPagerAdapter extends FragmentPagerAdapter {
         fragmentTitleList.add(title);
     }
 
-    @Override
     public CharSequence getPageTitle(int position) {
         return fragmentTitleList.get(position);
     }
+
+    @Override
+    public Fragment createFragment(int index) {
+        Log.i("AutoWatS createFragment", "index:" + index);
+        return fragmentList.get(index);
+
+    }
+
+    @Override
+    public int getItemCount() {return fragmentList.size();}
 }

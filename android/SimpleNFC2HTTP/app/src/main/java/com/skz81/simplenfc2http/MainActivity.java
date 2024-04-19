@@ -13,9 +13,11 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
-import androidx.viewpager.widget.ViewPager;
+import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.tabs.TabLayout;;
+import com.google.android.material.tabs.TabLayoutMediator;
 
 import com.skz81.simplenfc2http.R;
 import com.skz81.simplenfc2http.ScanTagsFragment;
@@ -33,7 +35,10 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
     private NdefTagCallback tagCB;
     private AppConfiguration config;
     private Varieties varieties;
-
+    private ScanTagsFragment scanTab;
+    private WriteTagFragment updateTab;
+    private AppConfFragment configTab;
+    private ViewPagerAdapter viewPagerAdapter;
 
     public String appName() {return appName;}
     public Varieties varieties() {return varieties;}
@@ -66,14 +71,21 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
         config = AppConfiguration.instance();
         tagCB = null;
 
-        ViewPager viewPager = findViewById(R.id.viewPager);
+        ViewPager2 viewPager = findViewById(R.id.viewPager);
         setupViewPager(viewPager);
 
         TabLayout tabLayout = findViewById(R.id.tabLayout);
-        tabLayout.setupWithViewPager(viewPager);
+        new TabLayoutMediator(tabLayout, viewPager,
+                (tab, position) -> {
+                    // Log.i(TAG, "onConfigureTab, tab:" + tab.toString() + ", pos:" + position);
+                    tab.setText(viewPagerAdapter.getPageTitle(position));
+                }
+        ).attach();
 
-        varieties = new Varieties(this, config.getServerURL(),
-                                  config.VARIETIES_URL, config.VARIETIES_IMG_URL);
+        if (varieties == null) {
+            varieties = new Varieties(this, config.getServerURL(),
+                                      config.VARIETIES_URL, config.VARIETIES_IMG_URL);
+        }
         try {
             PackageManager packageManager = this.getPackageManager();
             ApplicationInfo applicationInfo = packageManager.getApplicationInfo(this.getPackageName(), 0);
@@ -97,12 +109,16 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
 
     }
 
-    private void setupViewPager(ViewPager viewPager) {
-        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new ScanTagsFragment(), "Scan");
-        adapter.addFragment(new WriteTagFragment(), "Update");
-        adapter.addFragment(new AppConfFragment(), "Config");
-        viewPager.setAdapter(adapter);
+    private void setupViewPager(ViewPager2 viewPager) {
+        viewPagerAdapter = new ViewPagerAdapter(this);
+        scanTab = new ScanTagsFragment();
+        updateTab = new WriteTagFragment();
+        configTab = new AppConfFragment();
+
+        viewPagerAdapter.addFragment(scanTab, "Scan");
+        viewPagerAdapter.addFragment(updateTab, "Update");
+        viewPagerAdapter.addFragment(configTab, "Config");
+        viewPager.setAdapter(viewPagerAdapter);
     }
 
     public void startNFCScan(NdefTagCallback callback) {

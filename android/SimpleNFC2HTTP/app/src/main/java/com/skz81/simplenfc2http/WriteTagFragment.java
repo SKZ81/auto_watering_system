@@ -152,7 +152,7 @@ public class WriteTagFragment extends Fragment {
         @Override public String toString() {return label;}
     }
 
-    private static final String TAG = "AutoWatS-NFC-write";
+    private static final String TAG = "AutoWatS-NFC-update";
 
     private AppConfiguration config;
 
@@ -178,7 +178,9 @@ public class WriteTagFragment extends Fragment {
     private NdefReadListener ndefReader;
     private NdefWriteListener ndefWriter;
 
-    public WriteTagFragment() {}
+    public WriteTagFragment() {
+        Log.d(TAG, "WriteTagFragment ctor...");
+    }
 
     private void addDateFieldListener(EditText textview) {
         textview.setOnClickListener(new View.OnClickListener() {

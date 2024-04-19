@@ -60,7 +60,9 @@ public class ScanTagsFragment extends Fragment
     private TextView bloomingDate;
     private TextView yieldingDate;
 
-    public ScanTagsFragment() {}
+    public ScanTagsFragment() {
+        Log.d(TAG, "ScanTagsFragment ctor...");
+    }
 
     @Nullable
     @Override

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.text.TextWatcher;
 import android.text.Editable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,12 +18,17 @@ import androidx.fragment.app.Fragment;
 public class AppConfFragment extends Fragment
                               implements TextWatcher,
                                          RadioGroup.OnCheckedChangeListener {
+    private static final String TAG = "AutoWatS-NFC-config";
 
     private EditText serverEditText;
     private EditText portEditText;
     private RadioGroup protocolRadioGroup;
 
     private AppConfiguration config;
+
+    public AppConfFragment() {
+        Log.d(TAG, "AppConfFragment ctor...");
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
