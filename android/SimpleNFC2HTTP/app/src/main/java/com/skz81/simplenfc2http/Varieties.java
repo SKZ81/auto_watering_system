@@ -79,13 +79,13 @@ public class Varieties implements SendToServerTask.ReplyCB {
                 Variety variety = new Variety(id, name, shortDescription, photoUrl, bloomingTimeDays);
                 varieties.add(variety);
                 fetchVarietyImage(variety, server + imagesURLPrefix + photoUrl);
-                for (UpdateListener listener : listeners) {
-                    listener.onVarietiesUpdated();
-                }
+            }
+            for (UpdateListener listener : listeners) {
+                listener.onVarietiesUpdated();
             }
         } catch (JSONException e) {
             mainActivity.dumpError(TAG, "Error parsing varieties JSON data: " + e.getMessage());
-            varieties = null;
+            // varieties = null;
         }
     }
 
@@ -94,11 +94,11 @@ public class Varieties implements SendToServerTask.ReplyCB {
         mainActivity.dumpError(TAG, "Can't fetch varieties: " + error);
     }
 
-    public void registerListerner(UpdateListener listener) {
+    public void addListener(UpdateListener listener) {
         listeners.add(listener);
     }
 
-    public boolean unregisterListerner(UpdateListener listener) {
+    public boolean removeListener(UpdateListener listener) {
         return listeners.remove(listener);
     }
 

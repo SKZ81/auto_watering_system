@@ -85,6 +85,9 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
         if (varieties == null) {
             varieties = new Varieties(this, config.getServerURL(),
                                       config.VARIETIES_URL, config.VARIETIES_IMG_URL);
+            // varieties.addListener(this);
+            varieties.addListener(updateTab);
+            // TDB: check for BDD has been updated (need add & store last "fetched" timestamp)
         }
         try {
             PackageManager packageManager = this.getPackageManager();
@@ -110,10 +113,11 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
     }
 
     private void setupViewPager(ViewPager2 viewPager) {
+        // Log.d(TAG, "this=")
         viewPagerAdapter = new ViewPagerAdapter(this);
-        scanTab = new ScanTagsFragment();
-        updateTab = new WriteTagFragment();
-        configTab = new AppConfFragment();
+        scanTab = new ScanTagsFragment(this);
+        updateTab = new WriteTagFragment(this);
+        configTab = new AppConfFragment(this);
 
         viewPagerAdapter.addFragment(scanTab, "Scan");
         viewPagerAdapter.addFragment(updateTab, "Update");

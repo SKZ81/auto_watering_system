@@ -40,7 +40,9 @@ import com.skz81.simplenfc2http.AppConfiguration;
 import com.skz81.simplenfc2http.MainActivity;
 import com.skz81.simplenfc2http.SendToServerTask;
 
-public class WriteTagFragment extends Fragment {
+public class WriteTagFragment extends Fragment
+                              implements Varieties.UpdateListener {
+
     protected class NdefWriteListener implements NdefTagCallback {
         private String appName = null;
         private WriteTagFragment parent;
@@ -173,13 +175,17 @@ public class WriteTagFragment extends Fragment {
     private Calendar calendar;
     private AlertDialog scanTagDialog = null;
 
+    private boolean onCreateViewReceived = false;
+    private VarietyItem[] varieties = null;
     private String newUUID = null;
 
     private NdefReadListener ndefReader;
     private NdefWriteListener ndefWriter;
 
-    public WriteTagFragment() {
-        Log.d(TAG, "WriteTagFragment ctor...");
+    public WriteTagFragment(MainActivity parent) {
+        config = AppConfiguration.instance();
+        mainActivity = parent;
+        Log.d(TAG, "WriteTagFragment ctor...  parent=" + parent!=null ? parent.toString() : "null");
     }
 
     private void addDateFieldListener(EditText textview) {
@@ -217,8 +223,6 @@ public class WriteTagFragment extends Fragment {
         scanTagButton = view.findViewById(R.id.scanTagButton);
         newPlantButton = view.findViewById(R.id.newPlantButton);
         calendar = Calendar.getInstance();
-        config = AppConfiguration.instance();
-        mainActivity = (MainActivity) getActivity();
 
         addDateFieldListener(germinationDateEdit);
         addDateFieldListener(bloomingDateEdit);
@@ -229,13 +233,6 @@ public class WriteTagFragment extends Fragment {
 
         ndefReader = new NdefReadListener(this);
         ndefWriter = new NdefWriteListener(this, mainActivity.appName(), config);
-
-        VarietyItem[] varieties = mainActivity.varieties().getAll().stream()
-                .map(variety -> new VarietyItem(variety.name(), variety.id()))
-                .toArray(VarietyItem[]::new);
-        ArrayAdapter<VarietyItem> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, varieties);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        varietySpinner.setAdapter(adapter);
 
         // Generate ID button click listener
         newPlantButton.setOnClickListener(new View.OnClickListener() {
@@ -261,7 +258,29 @@ public class WriteTagFragment extends Fragment {
             }
         });
 
+        onCreateViewReceived = true;
+        if (varieties != null) {
+            updateSpinnor(varieties);
+        }
         return view;
+    }
+
+    @Override
+    public void onVarietiesUpdated() {
+        Log.d(TAG, "onVarietiesUpdated() mainActivity:" + mainActivity.toString());
+        varieties = mainActivity.varieties().getAll().stream()
+            .map(variety -> new VarietyItem(variety.name(), variety.id()))
+            .toArray(VarietyItem[]::new);
+        updateSpinnor(varieties);
+    }
+
+    private void updateSpinnor(VarietyItem[] varieties) {
+        if (!onCreateViewReceived) {
+            return;
+        }
+        ArrayAdapter<VarietyItem> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, varieties);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        varietySpinner.setAdapter(adapter);
     }
 
     void buttonNewPlantClicked() {

@@ -60,8 +60,9 @@ public class ScanTagsFragment extends Fragment
     private TextView bloomingDate;
     private TextView yieldingDate;
 
-    public ScanTagsFragment() {
-        Log.d(TAG, "ScanTagsFragment ctor...");
+    public ScanTagsFragment(MainActivity parent) {
+        Log.d(TAG, "ScanTagsFragment ctor... parent=" + parent!=null ? parent.toString() : "null");
+        mainActivity = parent;
     }
 
     @Nullable
@@ -85,7 +86,7 @@ public class ScanTagsFragment extends Fragment
         bloomingDate.setText("<date>");
         yieldingDate.setText("<date>");
 
-        mainActivity = (MainActivity) getActivity();
+        // mainActivity = (MainActivity) getActivity();
         if (mainActivity != null) {
             mainActivity.startNFCScan(this);
         }
