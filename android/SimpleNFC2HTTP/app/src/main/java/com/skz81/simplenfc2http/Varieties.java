@@ -21,6 +21,7 @@ public class Varieties implements SendToServerTask.ReplyCB {
 
     public interface UpdateListener {
         public void onVarietiesUpdated();
+        default void onVarietiesUpdateError() {}
     }
 
     public class Variety {
@@ -86,12 +87,18 @@ public class Varieties implements SendToServerTask.ReplyCB {
         } catch (JSONException e) {
             mainActivity.dumpError(TAG, "Error parsing varieties JSON data: " + e.getMessage());
             // varieties = null;
+            for (UpdateListener listener : listeners) {
+                listener.onVarietiesUpdateError();
+            }
         }
     }
 
     @Override
     public void onError(String error) {
         mainActivity.dumpError(TAG, "Can't fetch varieties: " + error);
+        for (UpdateListener listener : listeners) {
+            listener.onVarietiesUpdateError();
+        }
     }
 
     public void addListener(UpdateListener listener) {

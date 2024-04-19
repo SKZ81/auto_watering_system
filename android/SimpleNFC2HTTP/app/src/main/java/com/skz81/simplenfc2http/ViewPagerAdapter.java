@@ -11,11 +11,14 @@ import java.util.List;
 import android.util.Log;
 
 public class ViewPagerAdapter extends FragmentStateAdapter {
+    private static final String TAG = "AutoWatS.ViewPagerAdapter";
     private final List<Fragment> fragmentList = new ArrayList<>();
     private final List<String> fragmentTitleList = new ArrayList<>();
+    private FragmentActivity activity;
 
     public ViewPagerAdapter(@NonNull FragmentActivity fa) {
         super(fa);
+        activity = fa;
     }
 
     public void addFragment(Fragment fragment, String title) {
@@ -29,9 +32,28 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 
     @Override
     public Fragment createFragment(int index) {
-        Log.i("AutoWatS createFragment", "index:" + index);
+        Log.i(TAG, "createFragment, index:" + index);
         return fragmentList.get(index);
+    }
 
+    public void removeFragments(Fragment... toBeRemoved) {
+        for(Fragment fragment : toBeRemoved) {
+            int index = fragmentList.indexOf(fragment);
+            if (index != -1) {
+                Log.i(TAG, "Removing fragment : " + fragment.toString() + ", index: "+ index);
+                fragmentList.remove(index);
+                fragmentTitleList.remove(index);
+            } else {
+                Log.w(TAG, "Can't remove not found fragment: " + fragment.toString());
+            }
+        }
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // changeData();
+                notifyDataSetChanged();
+            }
+        });
     }
 
     @Override

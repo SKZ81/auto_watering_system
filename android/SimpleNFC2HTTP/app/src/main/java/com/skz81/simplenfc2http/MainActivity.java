@@ -1,22 +1,29 @@
 package com.skz81.simplenfc2http;
 
 import android.app.Activity;
-import android.content.Context;
+import android.app.AlertDialog;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.Context;
+import android.graphics.Color;
 import android.nfc.tech.Ndef;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
-
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.widget.ViewPager2;
-import com.google.android.material.tabs.TabLayout;;
+import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 import com.skz81.simplenfc2http.R;
@@ -26,7 +33,8 @@ import com.skz81.simplenfc2http.AppConfFragment;
 import com.skz81.simplenfc2http.AppConfiguration;
 import com.skz81.simplenfc2http.Varieties;
 
-public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderCallback {
+public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderCallback,
+                                                              Varieties.UpdateListener{
     private static final String TAG = "AutoWatS-NFC";
 
     private String appName;
@@ -39,6 +47,8 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
     private WriteTagFragment updateTab;
     private AppConfFragment configTab;
     private ViewPagerAdapter viewPagerAdapter;
+    private AlertDialog progressDialog;
+    private ViewPager2 viewPager;
 
     public String appName() {return appName;}
     public Varieties varieties() {return varieties;}
@@ -63,6 +73,82 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
     }
 
     @Override
+    public void onVarietiesUpdated() {
+        hideLoadingDialog();
+    }
+
+    @Override
+    public void onVarietiesUpdateError() {
+        hideLoadingDialog();
+        // viewPagerAdapter.removeFragments(scanTab, updateTab);
+    }
+
+    private void showLoadingDialog() {
+        if(progressDialog == null){
+            int llPadding = 30;
+            LinearLayout ll = new LinearLayout(this);
+            ll.setOrientation(LinearLayout.HORIZONTAL);
+            ll.setPadding(llPadding, llPadding, llPadding, llPadding);
+            ll.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams llParam = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            llParam.gravity = Gravity.CENTER;
+            ll.setLayoutParams(llParam);
+
+            ProgressBar progressBar = new ProgressBar(this);
+            progressBar.setIndeterminate(true);
+            progressBar.setPadding(0, 0, llPadding, 0);
+            progressBar.setLayoutParams(llParam);
+
+            llParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            llParam.gravity = Gravity.CENTER;
+            TextView tvText = new TextView(this);
+            tvText.setText("Connecting to server...");
+            tvText.setTextColor(Color.parseColor("#D0D0D0"));
+            tvText.setTextSize(20);
+            tvText.setLayoutParams(llParam);
+
+            ll.addView(progressBar);
+            ll.addView(tvText);
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setCancelable(true);
+            builder.setView(ll);
+
+            progressDialog = builder.create();
+            progressDialog.show();
+            Window window = progressDialog.getWindow();
+            if (window != null) {
+                WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
+                layoutParams.copyFrom(progressDialog.getWindow().getAttributes());
+                layoutParams.width = LinearLayout.LayoutParams.WRAP_CONTENT;
+                layoutParams.height = LinearLayout.LayoutParams.WRAP_CONTENT;
+                progressDialog.getWindow().setAttributes(layoutParams);
+            }
+        }
+    }
+
+    public boolean isDialogVisible(){
+        if(progressDialog != null){
+            return progressDialog.isShowing();
+        }else {
+            return false;
+        }
+    }
+
+    private void hideLoadingDialog() {
+        Log.i(TAG, "hide dialog.");
+        if(progressDialog != null){
+            progressDialog.dismiss();
+            progressDialog = null;
+        } else {
+            Log.i(TAG, "Dialog was null!");
+        }
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "is starting...");
         super.onCreate(savedInstanceState);
@@ -71,10 +157,11 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
         config = AppConfiguration.instance();
         tagCB = null;
 
-        ViewPager2 viewPager = findViewById(R.id.viewPager);
+        viewPager = findViewById(R.id.viewPager);
+        TabLayout tabLayout = findViewById(R.id.tabLayout);
+
         setupViewPager(viewPager);
 
-        TabLayout tabLayout = findViewById(R.id.tabLayout);
         new TabLayoutMediator(tabLayout, viewPager,
                 (tab, position) -> {
                     // Log.i(TAG, "onConfigureTab, tab:" + tab.toString() + ", pos:" + position);
@@ -85,8 +172,9 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
         if (varieties == null) {
             varieties = new Varieties(this, config.getServerURL(),
                                       config.VARIETIES_URL, config.VARIETIES_IMG_URL);
-            // varieties.addListener(this);
+            varieties.addListener(this);
             varieties.addListener(updateTab);
+
             // TDB: check for BDD has been updated (need add & store last "fetched" timestamp)
         }
         try {
@@ -110,6 +198,7 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
             Log.w(TAG, "NFC Disabled !..");
         }
 
+        showLoadingDialog();
     }
 
     private void setupViewPager(ViewPager2 viewPager) {
