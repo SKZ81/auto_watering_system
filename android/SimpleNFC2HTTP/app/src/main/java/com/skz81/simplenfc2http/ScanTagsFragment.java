@@ -44,6 +44,7 @@ import com.skz81.simplenfc2http.AppConfiguration;
 import com.skz81.simplenfc2http.MainActivity;
 import com.skz81.simplenfc2http.NdefTagCallback;
 import com.skz81.simplenfc2http.SendToServerTask;
+import com.skz81.simplenfc2http.SearchPlantId;
 
 public class ScanTagsFragment extends Fragment
                               implements NdefTagCallback {
@@ -59,6 +60,7 @@ public class ScanTagsFragment extends Fragment
     private TextView germinationDate;
     private TextView bloomingDate;
     private TextView yieldingDate;
+    private SearchPlantId.BasicListener listener;
 
     public ScanTagsFragment(MainActivity parent) {
         Log.d(TAG, "ScanTagsFragment ctor... parent=" + parent!=null ? parent.toString() : "null");
@@ -85,6 +87,29 @@ public class ScanTagsFragment extends Fragment
         germinationDate.setText("<date>");
         bloomingDate.setText("<date>");
         yieldingDate.setText("<date>");
+
+        listener = new SearchPlantId.BasicListener();
+        listener.addAttribute("UUID", String.class, value -> {
+            plantId.setText((String) value);
+        });
+        listener.addAttribute("variety", Integer.class, value -> {
+            Varieties.Variety variety = mainActivity.varieties().getById((Integer) value);
+            varietyName.setText(variety.name());
+        });
+        listener.addAttribute("sex", Integer.class, value -> {
+            RadioButton radioBtn = (RadioButton) genderRadioGroup.getChildAt((Integer) value);
+            radioBtn .setChecked(true);
+        });
+        listener.addAttribute("germination_date", String.class, value -> {
+            germinationDate.setText((String) value);
+        });
+        listener.addAttribute("blooming_date", String.class, value -> {
+            bloomingDate.setText((String) value);
+        });
+        listener.addAttribute("yielding_date", String.class, value -> {
+            yieldingDate.setText((String) value);
+        });
+        SearchPlantId.addListener(listener);
 
         // mainActivity = (MainActivity) getActivity();
         if (mainActivity != null) {
@@ -133,7 +158,6 @@ public class ScanTagsFragment extends Fragment
 
         try {
             AppConfiguration config = AppConfiguration.instance();
-            Map<String, String> params = new HashMap<>();
             String uuid = null;
             if (message == null) {throw new IOException("Tag is empty");}
             NdefRecord[] records = message.getRecords();
@@ -147,49 +171,16 @@ public class ScanTagsFragment extends Fragment
             if (serverTask != null) {
                 serverTask.cancel(true);
             }
-            uuid = records[0].getPayload().toString();
-            params.put("uuid", uuid);
-            serverTask = new SendToServerTask(new SendToServerTask.ReplyCB() {
-                @Override
-                public void onRequestFailure(int errorCode) {
-                    if (errorCode == 404 && mainActivity != null) {
-                        Log.e(TAG, "Unknown Tag...");
-                        // Toast.makeText(mainActivity, "Unknown Tag...", Toast.LENGTH_LONG).show();
-                    }
-                }
-                @Override
-                public void onReplyFromServer(String data) {
-                    setTabFieldsFromJSON(data);
-                }
-                @Override
-                public void onError(String error) {
-                    Log.e(TAG, "Error fetching data: " + error);
-                }
-            });
-            serverTask.GET(config.getServerURL() + config.PLANT_SEARCH_ID, params);
+            // TODO: utility fonction / class to extract UUID
+            byte[] payload = records[0].getPayload();
+            byte[] raw_uuid = new byte[payload.length - payload[0] - 1];
+            System.arraycopy(payload, payload[0] + 1, raw_uuid, 0, raw_uuid.length);
+            uuid = new String(raw_uuid);
+
+            Log.i(TAG, "Read tag UUID: " + uuid);
+            new SearchPlantId(uuid);
         } catch (IOException e) {
             Log.e(TAG, "Error scanning tag:" + e.getMessage());
-        }
-    }
-
-    private void setTabFieldsFromJSON(String json) {
-        if (json == null) return; // filter error case (should not happend)
-        try {
-            Log.d(TAG, "Got JSON:\n" + json);
-            JSONArray jsonArray = new JSONArray(json);
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                int variety_id = jsonObject.getInt("variety");
-                varietyName.setText(mainActivity.varieties().getNameById(variety_id, "not available"));
-                plantId.setText(jsonObject.getString("UUID"));
-                germinationDate.setText(jsonObject.getString("germination_date"));
-                bloomingDate.setText(jsonObject.getString("blooming_date"));
-                yieldingDate.setText(jsonObject.getString("yielding_date"));
-                new LoadImageTask(varietyIcon).execute(
-                    mainActivity.varieties().getImageById(variety_id));
-            }
-        } catch (JSONException e) {
-            Log.e(TAG, "Error parsing JSON data: " + e.getMessage());
         }
     }
 
