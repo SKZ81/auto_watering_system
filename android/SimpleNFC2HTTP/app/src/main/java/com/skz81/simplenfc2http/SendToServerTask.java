@@ -1,6 +1,8 @@
 package com.skz81.simplenfc2http;
 
-import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,22 +11,29 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-class SendToServerTask extends AsyncTask<String, Void, String> {
+public class SendToServerTask {
     private static final String TAG = "AutoWatS.HTTP";
-    private ReplyCB replyCallback = null;
-    private boolean error = false;
 
-    public interface ReplyCB {
+    private ReplyCB replyCallback;
+    private boolean error = false;
+    private boolean cancelled = false;
+    private boolean done = false;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
+    public interface ReplyCB { // TODO rename to ReplyListener
         default String decodeServerResponse(InputStream input) {
             StringBuilder reply = new StringBuilder();
             try {
                 BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(input));
+                        new BufferedReader(new InputStreamReader(input));
                 String line;
                 while ((line = reader.readLine()) != null) {
                     reply.append(line).append("\n");
@@ -37,14 +46,25 @@ class SendToServerTask extends AsyncTask<String, Void, String> {
         }
 
         default void onRequestFailure(int errorCode) {}
+
         void onReplyFromServer(String data);
+
         void onError(String error);
     }
 
-
-    // Constructor to pass the fragment instance
     public SendToServerTask(ReplyCB replyCallback) {
         this.replyCallback = replyCallback;
+    }
+
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    public boolean cancel() {
+        if (done || cancelled) {
+            return false;
+        }
+        return cancelled;
     }
 
     public void GET(String url, Map<String, String> params) {
@@ -61,15 +81,15 @@ class SendToServerTask extends AsyncTask<String, Void, String> {
             }
         }
 
-        execute("GET", url + queryString.toString());
+        execute("GET", url, queryString.toString());
     }
 
-    public void POST(String url, String param) {
+    public void POST(final String url, final String param) {
         execute("POST", url, param);
     }
 
-    public void POST(String url, Map<String, String> params) {
-        String str_params = "";
+    public void POST(final String url, final Map<String, String> params) {
+        String strParams = "";
 
         if (params != null) {
             JSONObject jsonParams = new JSONObject();
@@ -77,23 +97,62 @@ class SendToServerTask extends AsyncTask<String, Void, String> {
                 for (Map.Entry<String, String> entry : params.entrySet()) {
                     jsonParams.put(entry.getKey(), entry.getValue());
                 }
-                str_params = jsonParams.toString();
+                strParams = jsonParams.toString();
             } catch (JSONException e) {
                 if (replyCallback != null) {
                     replyCallback.onError(("error encoding JSON params: " + e.getMessage()));
                 }
             }
         }
-        POST(url, str_params);
+        POST(url, strParams);
     }
 
-    @Override
+    public void execute(final String method, final String url, final String param) {
+        if (cancelled) {
+            replyCallback.onError("Sever task cancelled.");
+            return;
+        }
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<String> future = executor.submit(new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                return doInBackground(method, url, param);
+            }
+        });
+
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final String result = future.get();
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            done = true;
+                            if (!cancelled && !error) {
+                                replyCallback.onReplyFromServer(result);
+                            } else if (cancelled) {
+                                replyCallback.onError("Sever task cancelled.");
+                            } // else onError() should be called directly in error cases
+                        }
+                    });
+                } catch (Exception e) {
+                    replyCallback.onError("Error while running server task thread: " + e.getMessage());
+                    error = true;
+                    done = true;
+                }
+            }
+        });
+    }
+
     protected String doInBackground(String... params) {
         // Check if correct number of parameters provided based on HTTP method
-        if ((params[0].equals("GET") && params.length != 2) || (params[0].equals("POST") && params.length != 3)) {
+        if ((params[0].equals("GET") && params.length != 3) ||
+            (params[0].equals("POST") && params.length != 3)) {
             if (replyCallback != null) {
                 replyCallback.onError("Invalid number of parameters provided.");
             }
+            error = true;
             return null;
         }
 
@@ -102,6 +161,7 @@ class SendToServerTask extends AsyncTask<String, Void, String> {
             if (replyCallback != null) {
                 replyCallback.onError("Invalid HTTP method: " + params[0]);
             }
+            error = true;
             return null;
         }
 
@@ -110,11 +170,15 @@ class SendToServerTask extends AsyncTask<String, Void, String> {
         String reply;
 
         try {
-            URL url = new URL(params[1]);
+            URL url;
+            if (params[0].equals("GET")) {
+                url = new URL(params[1] + params[2]);
+            } else {
+                url = new URL(params[1]);
+            }
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod(params[0]);
             urlConnection.setConnectTimeout(5000);
-
             // Set request headers for POST method
             if (params[0].equals("POST")) {
                 urlConnection.setRequestProperty("Content-Type", "application/json");
@@ -154,20 +218,11 @@ class SendToServerTask extends AsyncTask<String, Void, String> {
                 }
             } catch (Exception e) {
                 if (replyCallback != null) {
-                    replyCallback.onError("Error during HTTP connection: " + e.getMessage());
+                    replyCallback.onError("Error while disconnectong from server: " + e.getMessage());
                 }
             }
         }
         return reply;
     }
 
-
-    @Override
-    protected void onPostExecute(String result) {
-        super.onPostExecute(result);
-        if (!error && result != null) {
-            // Pass the result back to the fragment
-            replyCallback.onReplyFromServer(result);
-        }
-    }
 }

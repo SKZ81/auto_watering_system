@@ -2,7 +2,6 @@ package com.skz81.simplenfc2http;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
@@ -28,6 +27,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -141,7 +144,7 @@ public class ScanTagsFragment extends Fragment
             mainActivity.stopNFCScan();
         }
         if (serverTask != null) {
-            serverTask.cancel(true);
+            serverTask.cancel();
         }
         super.onDestroyView();
     }
@@ -169,7 +172,7 @@ public class ScanTagsFragment extends Fragment
                 throw new IOException("Bad TAG format: bad record type/content");
             }
             if (serverTask != null) {
-                serverTask.cancel(true);
+                serverTask.cancel();
             }
             // TODO: utility fonction / class to extract UUID
             byte[] payload = records[0].getPayload();
@@ -184,26 +187,42 @@ public class ScanTagsFragment extends Fragment
         }
     }
 
-    private class LoadImageTask extends AsyncTask<String, Void, Bitmap> {
-        private ImageView view = null;
+    public class LoadImageTask {
+        private ImageView view;
 
         public LoadImageTask(ImageView view) {
             this.view = view;
         }
 
-        @Override
-        protected Bitmap doInBackground(String... params) {
-            byte[] decodedBytes = Base64.decode(params[0], Base64.DEFAULT);
-            InputStream inputStream = new ByteArrayInputStream(decodedBytes);
-            return BitmapFactory.decodeStream(inputStream);
-        }
+        public void execute(final String base64Image) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future<Bitmap> future = executor.submit(new Callable<Bitmap>() {
+                @Override
+                public Bitmap call() throws Exception {
+                    byte[] decodedBytes = Base64.decode(base64Image, Base64.DEFAULT);
+                    InputStream inputStream = new ByteArrayInputStream(decodedBytes);
+                    return BitmapFactory.decodeStream(inputStream);
+                }
+            });
 
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            super.onPostExecute(bitmap);
-            if (bitmap != null && view != null) {
-                view.setImageBitmap(bitmap);
-            }
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        final Bitmap bitmap = future.get();
+                        view.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (bitmap != null && view != null) {
+                                    view.setImageBitmap(bitmap);
+                                }
+                            }
+                        });
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error setting varity image:" + e.getMessage());
+                    }
+                }
+            });
         }
     }
 }
