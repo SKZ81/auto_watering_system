@@ -15,6 +15,9 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.LiveData;
 
 import android.nfc.tech.Ndef;
 import android.nfc.NdefRecord;
@@ -48,6 +51,7 @@ import com.skz81.simplenfc2http.MainActivity;
 import com.skz81.simplenfc2http.NdefTagCallback;
 import com.skz81.simplenfc2http.SendToServerTask;
 import com.skz81.simplenfc2http.SearchPlantId;
+import com.skz81.simplenfc2http.SharedJSONInfo;
 
 public class ScanTagsFragment extends Fragment
                               implements NdefTagCallback {
@@ -63,7 +67,9 @@ public class ScanTagsFragment extends Fragment
     private TextView germinationDate;
     private TextView bloomingDate;
     private TextView yieldingDate;
-    private SearchPlantId.BasicListener listener;
+
+    private JSONInfoAdapter plantInfoAdapter;
+    private SharedJSONInfo plantInfo;
 
     public ScanTagsFragment(MainActivity parent) {
         Log.d(TAG, "ScanTagsFragment ctor... parent=" + parent!=null ? parent.toString() : "null");
@@ -91,35 +97,57 @@ public class ScanTagsFragment extends Fragment
         bloomingDate.setText("<date>");
         yieldingDate.setText("<date>");
 
-        listener = new SearchPlantId.BasicListener();
-        listener.addAttribute("UUID", String.class, value -> {
-            plantId.setText((String) value);
-        });
-        listener.addAttribute("variety", Integer.class, value -> {
-            Varieties.Variety variety = mainActivity.varieties().getById((Integer) value);
-            varietyName.setText(variety.name());
-        });
-        listener.addAttribute("sex", Integer.class, value -> {
-            RadioButton radioBtn = (RadioButton) genderRadioGroup.getChildAt((Integer) value);
-            radioBtn .setChecked(true);
-        });
-        listener.addAttribute("germination_date", String.class, value -> {
-            germinationDate.setText((String) value);
-        });
-        listener.addAttribute("blooming_date", String.class, value -> {
-            bloomingDate.setText((String) value);
-        });
-        listener.addAttribute("yielding_date", String.class, value -> {
-            yieldingDate.setText((String) value);
-        });
-        SearchPlantId.addListener(listener);
-
         // mainActivity = (MainActivity) getActivity();
         if (mainActivity != null) {
             mainActivity.startNFCScan(this);
         }
+        plantInfo = new ViewModelProvider(requireActivity())
+                        .get(SharedJSONInfo.class);
+        plantInfoAdapter = new JSONInfoAdapter(this, plantInfo);
+        plantInfoAdapter.addAttribute("UUID", String.class,
+                                      value -> plantId.setText((String) value),
+                                      () -> plantId.setText(""));
+        plantInfoAdapter.addAttribute("variety", Integer.class,
+                                       value -> setVarietyFields((Integer) value),
+                                       () -> clearVarietyFields());
+        plantInfoAdapter.addAttribute("sex", Integer.class,
+                                      value -> setGenderField((Integer) value),
+                                      () -> genderRadioGroup.clearCheck());
+        plantInfoAdapter.addAttribute("germination_date", String.class,
+                                      value -> germinationDate.setText((String) value),
+                                      () -> germinationDate.setText(""));
+        plantInfoAdapter.addAttribute("blooming_date", String.class,
+                                      value -> bloomingDate.setText((String) value),
+                                      () -> bloomingDate.setText(""));
+        plantInfoAdapter.addAttribute("yielding_date", String.class,
+                                      value -> yieldingDate.setText((String) value),
+                                      () -> yieldingDate.setText(""));
 
         return view;
+    }
+
+    private void setVarietyFields(int varietyId) {
+        Varieties.Variety variety = mainActivity.varieties().getById(varietyId);
+        varietyName.setText(variety.name());
+        new LoadImageTask(varietyIcon).execute(variety.imageBase64());
+    }
+
+    private void clearVarietyFields() {
+        varietyIcon.setImageBitmap(null);
+        varietyName.setText("");
+    }
+    private void setGenderField(int gender) {
+        RadioButton radioBtn = (RadioButton) genderRadioGroup.getChildAt(gender);
+        if (radioBtn != null) {
+            radioBtn.setChecked(true);
+        } else {
+            genderRadioGroup.clearCheck();
+        }
+    }
+
+    private void resetGenderField(int gender) {
+        RadioButton radioBtn = (RadioButton) genderRadioGroup.getChildAt(gender);
+        radioBtn.setChecked(true);
     }
 
     @Override
@@ -181,7 +209,7 @@ public class ScanTagsFragment extends Fragment
             uuid = new String(raw_uuid);
 
             Log.i(TAG, "Read tag UUID: " + uuid);
-            new SearchPlantId(uuid);
+            SearchPlantId.newQuery(plantInfo, uuid);
         } catch (IOException e) {
             Log.e(TAG, "Error scanning tag:" + e.getMessage());
         }

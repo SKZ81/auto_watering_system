@@ -17,10 +17,14 @@ import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
+import android.widget.SpinnerAdapter ;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.LiveData;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -40,6 +44,9 @@ import org.json.JSONObject;
 import com.skz81.simplenfc2http.AppConfiguration;
 import com.skz81.simplenfc2http.MainActivity;
 import com.skz81.simplenfc2http.SendToServerTask;
+import com.skz81.simplenfc2http.SearchPlantId;
+import com.skz81.simplenfc2http.JSONInfoAdapter;
+import com.skz81.simplenfc2http.SharedJSONInfo;
 
 public class WriteTagFragment extends Fragment
                               implements Varieties.UpdateListener {
@@ -198,6 +205,9 @@ public class WriteTagFragment extends Fragment
     private Calendar calendar;
     private AlertDialog scanTagDialog = null;
 
+    private JSONInfoAdapter plantInfoAdapter;
+    private SharedJSONInfo plantInfo;
+
     private boolean onCreateViewReceived = false;
     private VarietyItem[] varieties = null;
     private String newUUID = null;
@@ -281,11 +291,56 @@ public class WriteTagFragment extends Fragment
             }
         });
 
+        plantInfo = new ViewModelProvider(requireActivity())
+                .get(SharedJSONInfo.class);
+        plantInfoAdapter = new JSONInfoAdapter(this, plantInfo);
+
+        plantInfoAdapter.addAttribute("UUID", String.class,
+                                      value -> plantId.setText((String) value),
+                                      () -> plantId.getText().clear());
+        plantInfoAdapter.addAttribute("variety", Integer.class,
+                                      value -> setVarietySpinner((Integer) value),
+                                      () -> varietySpinner.setSelection(0));
+        plantInfoAdapter.addAttribute("sex", Integer.class,
+                                      value -> setGenderField((Integer) value),
+                                      () -> genderRadioGroup.clearCheck());
+        plantInfoAdapter.addAttribute("germination_date", String.class,
+                                      value -> germinationDateEdit.setText((String) value),
+                                      () -> germinationDateEdit.getText().clear());
+        plantInfoAdapter.addAttribute("blooming_date", String.class,
+                                      value -> bloomingDateEdit.setText((String) value),
+                                      () -> bloomingDateEdit.getText().clear());
+        plantInfoAdapter.addAttribute("yielding_date", String.class,
+                                      value -> yieldingDateEdit.setText((String) value),
+                                      () -> yieldingDateEdit.getText().clear());
+
         onCreateViewReceived = true;
         if (varieties != null) {
             updateSpinnor(varieties);
         }
+
         return view;
+    }
+
+    private void setVarietySpinner(int varietyId) {
+        Varieties.Variety variety = mainActivity.varieties().getById(varietyId);
+        SpinnerAdapter spinnerAdapter = varietySpinner.getAdapter();
+        for (int i = 0; i < spinnerAdapter.getCount(); i++) {
+            VarietyItem item = (VarietyItem)spinnerAdapter.getItem(i);
+            if (item.id() == variety.id()) {
+                varietySpinner.setSelection(i);
+                break; // Exit the loop once the item is found
+            }
+        }
+    }
+
+    private void setGenderField(int index) {
+        RadioButton radioBtn = (RadioButton) genderRadioGroup.getChildAt(index);
+        if (radioBtn != null) {
+            radioBtn.setChecked(true);
+        } else {
+            genderRadioGroup.clearCheck();
+        }
     }
 
     @Override
