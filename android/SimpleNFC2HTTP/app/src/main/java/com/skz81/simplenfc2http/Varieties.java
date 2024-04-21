@@ -44,6 +44,7 @@ public class Varieties implements SendToServerTask.ReplyCB {
         public String name() {return name;}
         public String shortDescription() {return shortDescription;}
         public String photoUrl() {return photoUrl;}
+        public String imageBase64() {return image_base64;}
         public int bloomingTimeDays() {return bloomingTimeDays;}
     }
 

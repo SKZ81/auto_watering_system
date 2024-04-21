@@ -97,10 +97,6 @@ public class ScanTagsFragment extends Fragment
         bloomingDate.setText("<date>");
         yieldingDate.setText("<date>");
 
-        // mainActivity = (MainActivity) getActivity();
-        if (mainActivity != null) {
-            mainActivity.startNFCScan(this);
-        }
         plantInfo = new ViewModelProvider(requireActivity())
                         .get(SharedJSONInfo.class);
         plantInfoAdapter = new JSONInfoAdapter(this, plantInfo);
@@ -153,6 +149,7 @@ public class ScanTagsFragment extends Fragment
     @Override
     public void onResume() {
         super.onResume();
+        // NOTE: onResume() is always called after onCreateView()
         if (mainActivity != null) {
             mainActivity.startNFCScan(this);
         }
