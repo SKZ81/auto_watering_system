@@ -85,6 +85,7 @@ public class MainActivity extends FragmentActivity
     public void onServerConnectionError(String error) {
         hideLoadingDialog();
         toastDisplay(TAG, error + "\nPlease check config.", true);
+        runOnUiThread(() -> configTab.activateConnectButton());
     }
 
     private void showLoadingDialog() {
@@ -194,7 +195,10 @@ public class MainActivity extends FragmentActivity
             Toast.makeText(this, "Please enable NFC", Toast.LENGTH_LONG).show();
             Log.w(TAG, "NFC Disabled !..");
         }
+        connectServer();
+    }
 
+    public void connectServer() {
         showLoadingDialog();
         varieties = Varieties.instance(this);
     }

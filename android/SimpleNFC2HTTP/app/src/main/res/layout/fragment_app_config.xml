@@ -18,6 +18,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="HTTPS" />
+
     </RadioGroup>
 
     <EditText
@@ -34,5 +35,17 @@
         android:layout_below="@id/serverEditText"
         android:inputType="number"
         android:hint="Port" />
+
+    <!--  Active when detecting connection error -->
+    <Button
+        android:id="@+id/connectServerButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/portEditText"
+        android:layout_marginTop="16dp"
+        android:clickable="false"
+        android:enabled="false"
+        android:text="Connect" />
+
 
 </RelativeLayout>

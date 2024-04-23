@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -23,11 +24,20 @@ public class AppConfFragment extends Fragment
     private EditText serverEditText;
     private EditText portEditText;
     private RadioGroup protocolRadioGroup;
-
+    private Button connectButton;
+    private MainActivity mainActivity;
     private AppConfiguration config;
 
     public AppConfFragment(MainActivity parent) {
         Log.d(TAG, "AppConfFragment ctor... parent = " + parent!=null ? parent.toString() : "null");
+    }
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        config = AppConfiguration.instance();
+        mainActivity = (MainActivity) context;
+        Log.d(TAG, "WriteTagFragment onAttach... mainActivity=" + ((mainActivity!=null) ? mainActivity.toString() : "null"));
     }
 
     @Override
@@ -37,7 +47,7 @@ public class AppConfFragment extends Fragment
         serverEditText = view.findViewById(R.id.serverEditText);
         portEditText = view.findViewById(R.id.portEditText);
         protocolRadioGroup = view.findViewById(R.id.protocolRadioGroup);
-
+        connectButton = view.findViewById(R.id.connectServerButton);
         config = AppConfiguration.instance();
 
         serverEditText.setText(config.serverAddress());
@@ -78,6 +88,16 @@ public class AppConfFragment extends Fragment
     public void onCheckedChanged(RadioGroup group, int checkedId) {
         // Save all radio groups into config
         config.setHttps(checkedId == R.id.httpsRadioButton);
+    }
+
+    public void activateConnectButton() {
+        connectButton.setEnabled(true);
+        connectButton.setClickable(true);
+        connectButton.setOnClickListener(v -> {
+            mainActivity.connectServer();
+            connectButton.setClickable(false);
+            connectButton.setEnabled(false);
+        });
     }
 
     // Implementation needed, but not used.
