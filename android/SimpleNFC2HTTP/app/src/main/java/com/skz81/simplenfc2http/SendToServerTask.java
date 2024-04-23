@@ -2,6 +2,7 @@ package com.skz81.simplenfc2http;
 
 import android.os.Handler;
 import android.os.Looper;
+import androidx.annotation.NonNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,6 +28,7 @@ public class SendToServerTask {
     private boolean cancelled = false;
     private boolean done = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private ConnectionStateWatcher connectionWatcher = null;
 
     public interface ReplyCB { // TODO rename to ReplyListener
         default String decodeServerResponse(InputStream input) {
@@ -52,7 +54,16 @@ public class SendToServerTask {
         void onError(String error);
     }
 
-    public SendToServerTask(ReplyCB replyCallback) {
+    public interface ConnectionStateWatcher {
+        public void onServerConnectionOk();
+        public void onServerConnectionError(String error);
+    }
+
+    public void setConnectionWatcher(ConnectionStateWatcher watcher) {
+        connectionWatcher = watcher;
+    }
+
+    public SendToServerTask(@NonNull ReplyCB replyCallback) {
         this.replyCallback = replyCallback;
     }
 
@@ -131,15 +142,27 @@ public class SendToServerTask {
                             done = true;
                             if (!cancelled && !error) {
                                 replyCallback.onReplyFromServer(result);
+                                if (connectionWatcher != null) {
+                                    connectionWatcher.onServerConnectionOk();
+                                }
                             } else if (cancelled) {
                                 replyCallback.onError("Sever task cancelled.");
                             } // else onError() should be called directly in error cases
                         }
                     });
                 } catch (Exception e) {
-                    replyCallback.onError("Error while running server task thread: " + e.getMessage());
                     error = true;
                     done = true;
+
+                    StringBuilder message = new StringBuilder();
+                    message.append("Server task error: ");
+                    message.append(e.getMessage());
+                    StackTraceElement[] stackTrace = e.getStackTrace();
+                    for(StackTraceElement elem : stackTrace) {
+                        message.append("\n");
+                        message.append(elem.toString());
+                    }
+                    replyCallback.onError(message.toString());
                 }
             }
         });
@@ -149,18 +172,14 @@ public class SendToServerTask {
         // Check if correct number of parameters provided based on HTTP method
         if ((params[0].equals("GET") && params.length != 3) ||
             (params[0].equals("POST") && params.length != 3)) {
-            if (replyCallback != null) {
-                replyCallback.onError("Invalid number of parameters provided.");
-            }
+            replyCallback.onError("Invalid number of parameters provided.");
             error = true;
             return null;
         }
 
         // Check if HTTP method is valid (either GET or POST)
         if (!params[0].equals("GET") && !params[0].equals("POST")) {
-            if (replyCallback != null) {
-                replyCallback.onError("Invalid HTTP method: " + params[0]);
-            }
+            replyCallback.onError("Invalid HTTP method: " + params[0]);
             error = true;
             return null;
         }
@@ -196,16 +215,16 @@ public class SendToServerTask {
 
             int responseCode = urlConnection.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
-                if (replyCallback != null) {
-                    replyCallback.onRequestFailure(responseCode);
-                }
-                throw new IOException("Server response code: " + responseCode);
+                replyCallback.onError("Server response code: " + responseCode);
+                return null;
             }
             reply = replyCallback.decodeServerResponse(urlConnection.getInputStream());
+
         } catch (IOException e) {
             error = true;
-            if (replyCallback != null) {
-                replyCallback.onError("HTTP server communication error: " + e.getMessage());
+            replyCallback.onError("HTTP server communication error: " + e.getMessage());
+            if (connectionWatcher != null) {
+                connectionWatcher.onServerConnectionError("HTTP server communication error: " + e.getMessage());
             }
             return null; // return null on error
         } finally {
@@ -217,8 +236,10 @@ public class SendToServerTask {
                     reader.close();
                 }
             } catch (Exception e) {
-                if (replyCallback != null) {
-                    replyCallback.onError("Error while disconnectong from server: " + e.getMessage());
+                replyCallback.onError("Error while disconnectong from server: " + e.getMessage());
+
+                if (connectionWatcher != null) {
+                    connectionWatcher.onServerConnectionError("Error while disconnectong from server: " + e.getMessage());
                 }
             }
         }

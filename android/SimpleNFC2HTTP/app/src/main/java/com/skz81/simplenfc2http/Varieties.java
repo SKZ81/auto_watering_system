@@ -67,6 +67,11 @@ public class Varieties extends ViewModel
                                       config.getServerURL(),
                                       config.VARIETIES_URL,
                                       config.VARIETIES_IMG_URL);
+        } else {
+            // simulate cnx ok
+            //TBD : we should check the timestamp each time instead !
+            // Also, should separate "varieties update" and "serverConnectionOK" signals
+            mainActivity.onServerConnectionOk();
         }
         return instance;
     }
@@ -83,6 +88,7 @@ public class Varieties extends ViewModel
         this.server = server;
         this.imagesURLPrefix = imagesURLPrefix;
         SendToServerTask serverTask = new SendToServerTask(this);
+        serverTask.setConnectionWatcher(mainActivity);
         serverTask.GET(server + varietiesURL, null);
     }
 

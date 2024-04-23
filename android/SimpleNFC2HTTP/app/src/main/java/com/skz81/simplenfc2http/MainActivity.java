@@ -32,9 +32,10 @@ import com.skz81.simplenfc2http.WriteTagFragment;
 import com.skz81.simplenfc2http.AppConfFragment;
 import com.skz81.simplenfc2http.AppConfiguration;
 import com.skz81.simplenfc2http.Varieties;
+public class MainActivity extends FragmentActivity
+                          implements NfcAdapter.ReaderCallback,
+                                     SendToServerTask.ConnectionStateWatcher {
 
-public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderCallback,
-                                                              Varieties.UpdateListener{
     private static final String TAG = "AutoWatS-NFC";
 
     private String appName;
@@ -73,15 +74,24 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
     }
 
     @Override
-    public void onVarietiesUpdated(Varieties update) {
+    public void onServerConnectionOk() {
         hideLoadingDialog();
     }
 
-    // @Override
-    // public void onVarietiesUpdateError() {
-    //     hideLoadingDialog();
-    //     // viewPagerAdapter.removeFragments(scanTab, updateTab);
-    // }
+    @Override
+    public void onServerConnectionError(String error) {
+        viewPager.post(()-> {
+            viewPager.setCurrentItem(2, false);
+        });
+        hideLoadingDialog();
+        toastDisplay(TAG, error + "\nPlease check config.", true);
+        // viewPagerAdapter.removeFragments(scanTab,
+        //                                  updateTab,
+        //                                  configTab);
+        // viewPagerAdapter.notifyFragmentsChanged();
+        // viewPagerAdapter.addFragment(configTab, "Config");
+        // viewPagerAdapter.notifyFragmentsChanged();
+    }
 
     private void showLoadingDialog() {
         if(progressDialog == null){
@@ -192,9 +202,7 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
         }
 
         showLoadingDialog();
-        Log.i(TAG, "getVarieties..");
         varieties = Varieties.instance(this);
-        varieties.observe(this);
     }
 
     private void setupViewPager(ViewPager2 viewPager) {
