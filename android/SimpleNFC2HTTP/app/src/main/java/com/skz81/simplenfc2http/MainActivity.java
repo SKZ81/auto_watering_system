@@ -73,15 +73,15 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
     }
 
     @Override
-    public void onVarietiesUpdated() {
+    public void onVarietiesUpdated(Varieties update) {
         hideLoadingDialog();
     }
 
-    @Override
-    public void onVarietiesUpdateError() {
-        hideLoadingDialog();
-        // viewPagerAdapter.removeFragments(scanTab, updateTab);
-    }
+    // @Override
+    // public void onVarietiesUpdateError() {
+    //     hideLoadingDialog();
+    //     // viewPagerAdapter.removeFragments(scanTab, updateTab);
+    // }
 
     private void showLoadingDialog() {
         if(progressDialog == null){
@@ -169,14 +169,7 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
                 }
         ).attach();
 
-        if (varieties == null) {
-            varieties = new Varieties(this, config.getServerURL(),
-                                      config.VARIETIES_URL, config.VARIETIES_IMG_URL);
-            varieties.addListener(this);
-            varieties.addListener(updateTab);
 
-            // TDB: check for BDD has been updated (need add & store last "fetched" timestamp)
-        }
         try {
             PackageManager packageManager = this.getPackageManager();
             ApplicationInfo applicationInfo = packageManager.getApplicationInfo(this.getPackageName(), 0);
@@ -199,6 +192,9 @@ public class MainActivity extends FragmentActivity implements NfcAdapter.ReaderC
         }
 
         showLoadingDialog();
+        Log.i(TAG, "getVarieties..");
+        varieties = Varieties.instance(this);
+        varieties.observe(this);
     }
 
     private void setupViewPager(ViewPager2 viewPager) {

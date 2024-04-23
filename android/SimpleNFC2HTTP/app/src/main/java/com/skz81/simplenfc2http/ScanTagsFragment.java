@@ -123,7 +123,7 @@ public class ScanTagsFragment extends Fragment
     }
 
     private void setVarietyFields(int varietyId) {
-        Varieties.Variety variety = mainActivity.varieties().getById(varietyId);
+        Varieties.Variety variety = Varieties.instance().getById(varietyId);
         varietyName.setText(variety.name());
         new LoadImageTask(varietyIcon).execute(variety.imageBase64());
     }

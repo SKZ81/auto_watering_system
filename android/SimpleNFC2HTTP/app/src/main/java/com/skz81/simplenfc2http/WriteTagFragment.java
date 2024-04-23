@@ -27,9 +27,12 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.LiveData;
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import android.nfc.tech.Ndef;
 import android.nfc.FormatException;
 import android.nfc.NdefRecord;
@@ -208,8 +211,7 @@ public class WriteTagFragment extends Fragment
     private JSONInfoAdapter plantInfoAdapter;
     private SharedJSONInfo plantInfo;
 
-    private boolean onCreateViewReceived = false;
-    private VarietyItem[] varieties = null;
+    private List<VarietyItem> varieties = null;
     private String newUUID = null;
 
     private NdefReadListener ndefReader;
@@ -291,6 +293,9 @@ public class WriteTagFragment extends Fragment
             }
         });
 
+        Varieties varieties = Varieties.instance();
+        varieties.observe(this);
+
         plantInfo = new ViewModelProvider(requireActivity())
                 .get(SharedJSONInfo.class);
         plantInfoAdapter = new JSONInfoAdapter(this, plantInfo);
@@ -314,16 +319,11 @@ public class WriteTagFragment extends Fragment
                                       value -> yieldingDateEdit.setText((String) value),
                                       () -> yieldingDateEdit.getText().clear());
 
-        onCreateViewReceived = true;
-        if (varieties != null) {
-            updateSpinnor(varieties);
-        }
-
         return view;
     }
 
     private void setVarietySpinner(int varietyId) {
-        Varieties.Variety variety = mainActivity.varieties().getById(varietyId);
+        Varieties.Variety variety = Varieties.instance().getById(varietyId);
         SpinnerAdapter spinnerAdapter = varietySpinner.getAdapter();
         for (int i = 0; i < spinnerAdapter.getCount(); i++) {
             VarietyItem item = (VarietyItem)spinnerAdapter.getItem(i);
@@ -344,18 +344,20 @@ public class WriteTagFragment extends Fragment
     }
 
     @Override
-    public void onVarietiesUpdated() {
-        Log.d(TAG, "onVarietiesUpdated() mainActivity:" + mainActivity.toString());
-        varieties = mainActivity.varieties().getAll().stream()
-            .map(variety -> new VarietyItem(variety.name(), variety.id()))
-            .toArray(VarietyItem[]::new);
-        updateSpinnor(varieties);
+    public void onVarietiesUpdated(Varieties update) {
+        if (update == null) {
+            varieties = new ArrayList<>();
+        } else {
+            varieties = update.getAll().stream().map(
+                variety -> new VarietyItem(variety.name(), variety.id())
+            ).collect(Collectors.toCollection(ArrayList::new));
+        }
+        updateSpinnor();
     }
 
-    private void updateSpinnor(VarietyItem[] varieties) {
-        if (!onCreateViewReceived) {
-            return;
-        }
+    private void updateSpinnor() {
+        if (varieties == null || varietySpinner == null) return;
+
         ArrayAdapter<VarietyItem> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, varieties);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         varietySpinner.setAdapter(adapter);

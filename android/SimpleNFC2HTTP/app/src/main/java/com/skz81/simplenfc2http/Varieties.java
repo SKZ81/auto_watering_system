@@ -2,6 +2,8 @@ package com.skz81.simplenfc2http;
 
 import android.util.Base64;
 import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -11,17 +13,25 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 
+import com.skz81.simplenfc2http.AppConfiguration;
 import com.skz81.simplenfc2http.MainActivity;
 import com.skz81.simplenfc2http.SendToServerTask;
 
-public class Varieties implements SendToServerTask.ReplyCB {
+
+public class Varieties extends ViewModel
+                       implements SendToServerTask.ReplyCB {
 
     private static final String TAG = "AutoWatS.Varieties";
 
     public interface UpdateListener {
-        public void onVarietiesUpdated();
-        default void onVarietiesUpdateError() {}
+        public void onVarietiesUpdated(Varieties updated);
     }
 
     public class Variety {
@@ -48,20 +58,32 @@ public class Varieties implements SendToServerTask.ReplyCB {
         public int bloomingTimeDays() {return bloomingTimeDays;}
     }
 
+    private static Varieties instance;
+    public static Varieties instance() { return instance; }
+    public static Varieties instance(MainActivity mainActivity) {
+        if (instance == null) {
+            AppConfiguration config = AppConfiguration.instance();
+            instance = new Varieties(mainActivity,
+                                      config.getServerURL(),
+                                      config.VARIETIES_URL,
+                                      config.VARIETIES_IMG_URL);
+        }
+        return instance;
+    }
+
     private MainActivity mainActivity;
     private List<Variety> varieties;
     private String server;
     private String imagesURLPrefix;
-    private List<UpdateListener> listeners;
 
-    public Varieties(MainActivity parent, String server,
+    private Varieties(MainActivity parent, String server,
                      String varietiesURL, String imagesURLPrefix) {
         this.mainActivity = parent;
         this.varieties = new ArrayList<>();
         this.server = server;
         this.imagesURLPrefix = imagesURLPrefix;
-        this.listeners = new ArrayList<> ();
-        new SendToServerTask(this).GET(server + varietiesURL, null);
+        SendToServerTask serverTask = new SendToServerTask(this);
+        serverTask.GET(server + varietiesURL, null);
     }
 
     @Override
@@ -82,32 +104,18 @@ public class Varieties implements SendToServerTask.ReplyCB {
                 varieties.add(variety);
                 fetchVarietyImage(variety, server + imagesURLPrefix + photoUrl);
             }
-            for (UpdateListener listener : listeners) {
-                listener.onVarietiesUpdated();
-            }
+            // notify "Update Tab" Spinner (and any other client) of varieties update
+            notifySharedViewUpdate(this);
         } catch (JSONException e) {
             mainActivity.dumpError(TAG, "Error parsing varieties JSON data: " + e.getMessage());
-            // varieties = null;
-            for (UpdateListener listener : listeners) {
-                listener.onVarietiesUpdateError();
-            }
+            notifySharedViewUpdate(null);
         }
     }
 
     @Override
     public void onError(String error) {
         mainActivity.dumpError(TAG, "Can't fetch varieties: " + error);
-        for (UpdateListener listener : listeners) {
-            listener.onVarietiesUpdateError();
-        }
-    }
-
-    public void addListener(UpdateListener listener) {
-        listeners.add(listener);
-    }
-
-    public boolean removeListener(UpdateListener listener) {
-        return listeners.remove(listener);
+        notifySharedViewUpdate(null);
     }
 
     public List<Variety> getAll() {
@@ -166,5 +174,31 @@ public class Varieties implements SendToServerTask.ReplyCB {
                 Log.e(TAG, "Can't fetch variety image: " + error);
             }
         }).GET(image_url, null);
+    }
+
+    private MutableLiveData<Varieties> sharedVarieties = new MutableLiveData<>();
+
+    public LiveData<Varieties> sharedView() {
+        return sharedVarieties;
+    }
+
+    public void observe(UpdateListener client) {
+        sharedVarieties.observeForever(new Observer<Varieties>() {
+            @Override
+            public void onChanged(@Nullable Varieties varieties) {
+                Log.i(TAG, "NOTIFY update varieties to " + client);
+                client.onVarietiesUpdated(varieties);
+            }
+        });
+    }
+
+    protected void notifySharedViewUpdate(Varieties updated) {
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                sharedVarieties.setValue(updated);
+            }
+        });
     }
 }

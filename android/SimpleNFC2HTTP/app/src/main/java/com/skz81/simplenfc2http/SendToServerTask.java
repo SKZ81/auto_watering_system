@@ -124,8 +124,8 @@ public class SendToServerTask {
             @Override
             public void run() {
                 try {
-                    final String result = future.get();
                     handler.post(new Runnable() {
+                    final String result = (!cancelled && !error) ? future.get() : null;
                         @Override
                         public void run() {
                             done = true;
