@@ -1,5 +1,6 @@
 package com.skz81.simplenfc2http;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -47,7 +48,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.skz81.simplenfc2http.AppConfiguration;
-import com.skz81.simplenfc2http.MainActivity;
 import com.skz81.simplenfc2http.NdefTagCallback;
 import com.skz81.simplenfc2http.SendToServerTask;
 import com.skz81.simplenfc2http.SearchPlantId;
@@ -71,9 +71,12 @@ public class ScanTagsFragment extends Fragment
     private JSONInfoAdapter plantInfoAdapter;
     private SharedJSONInfo plantInfo;
 
-    public ScanTagsFragment(MainActivity parent) {
-        Log.d(TAG, "ScanTagsFragment ctor... parent=" + parent!=null ? parent.toString() : "null");
-        mainActivity = parent;
+    public ScanTagsFragment() {}
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mainActivity = (MainActivity) context;
     }
 
     @Nullable

@@ -28,9 +28,7 @@ public class AppConfFragment extends Fragment
     private MainActivity mainActivity;
     private AppConfiguration config;
 
-    public AppConfFragment(MainActivity parent) {
-        Log.d(TAG, "AppConfFragment ctor... parent = " + parent!=null ? parent.toString() : "null");
-    }
+    public AppConfFragment() {}
 
     @Override
     public void onAttach(@NonNull Context context) {

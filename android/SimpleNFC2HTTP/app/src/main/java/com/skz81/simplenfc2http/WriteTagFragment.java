@@ -45,7 +45,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.skz81.simplenfc2http.AppConfiguration;
-import com.skz81.simplenfc2http.MainActivity;
 import com.skz81.simplenfc2http.SendToServerTask;
 import com.skz81.simplenfc2http.SearchPlantId;
 import com.skz81.simplenfc2http.JSONInfoAdapter;
@@ -217,10 +216,14 @@ public class WriteTagFragment extends Fragment
     private NdefReadListener ndefReader;
     private NdefWriteListener ndefWriter;
 
-    public WriteTagFragment(MainActivity parent) {
+    public WriteTagFragment() {}
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
         config = AppConfiguration.instance();
-        mainActivity = parent;
-        Log.d(TAG, "WriteTagFragment ctor...  parent=" + parent!=null ? parent.toString() : "null");
+        mainActivity = (MainActivity) context;
+        Log.d(TAG, "WriteTagFragment onAttach... mainActivity=" + mainActivity!=null ? mainActivity.toString() : "null");
     }
 
     private void addDateFieldListener(EditText textview) {

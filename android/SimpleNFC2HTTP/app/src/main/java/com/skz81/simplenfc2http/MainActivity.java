@@ -27,11 +27,13 @@ import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 import com.skz81.simplenfc2http.R;
+import com.skz81.simplenfc2http.AppConfiguration;
+import com.skz81.simplenfc2http.SendToServerTask;
+import com.skz81.simplenfc2http.Varieties;
+import com.skz81.simplenfc2http.AppConfFragment;
 import com.skz81.simplenfc2http.ScanTagsFragment;
 import com.skz81.simplenfc2http.WriteTagFragment;
-import com.skz81.simplenfc2http.AppConfFragment;
-import com.skz81.simplenfc2http.AppConfiguration;
-import com.skz81.simplenfc2http.Varieties;
+
 public class MainActivity extends FragmentActivity
                           implements NfcAdapter.ReaderCallback,
                                      SendToServerTask.ConnectionStateWatcher {
@@ -206,9 +208,9 @@ public class MainActivity extends FragmentActivity
     private void setupViewPager(ViewPager2 viewPager) {
         // Log.d(TAG, "this=")
         viewPagerAdapter = new ViewPagerAdapter(this);
-        scanTab = new ScanTagsFragment(this);
-        updateTab = new WriteTagFragment(this);
-        configTab = new AppConfFragment(this);
+        scanTab = new ScanTagsFragment();
+        updateTab = new WriteTagFragment();
+        configTab = new AppConfFragment();
 
         viewPagerAdapter.addPage(scanTab, "Scan", true);
         viewPagerAdapter.addPage(updateTab, "Update", true);
