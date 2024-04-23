@@ -76,21 +76,15 @@ public class MainActivity extends FragmentActivity
     @Override
     public void onServerConnectionOk() {
         hideLoadingDialog();
+        viewPagerAdapter.showPage(scanTab);
+        viewPagerAdapter.showPage(updateTab);
+        viewPagerAdapter.updateViewPager();
     }
 
     @Override
     public void onServerConnectionError(String error) {
-        viewPager.post(()-> {
-            viewPager.setCurrentItem(2, false);
-        });
         hideLoadingDialog();
         toastDisplay(TAG, error + "\nPlease check config.", true);
-        // viewPagerAdapter.removeFragments(scanTab,
-        //                                  updateTab,
-        //                                  configTab);
-        // viewPagerAdapter.notifyFragmentsChanged();
-        // viewPagerAdapter.addFragment(configTab, "Config");
-        // viewPagerAdapter.notifyFragmentsChanged();
     }
 
     private void showLoadingDialog() {
@@ -212,10 +206,13 @@ public class MainActivity extends FragmentActivity
         updateTab = new WriteTagFragment(this);
         configTab = new AppConfFragment(this);
 
-        viewPagerAdapter.addFragment(scanTab, "Scan");
-        viewPagerAdapter.addFragment(updateTab, "Update");
-        viewPagerAdapter.addFragment(configTab, "Config");
+        viewPagerAdapter.addPage(scanTab, "Scan", true);
+        viewPagerAdapter.addPage(updateTab, "Update", true);
+        viewPagerAdapter.addPage(configTab, "Config", true);
+        viewPagerAdapter.hidePage(scanTab);
+        viewPagerAdapter.hidePage(updateTab);
         viewPager.setAdapter(viewPagerAdapter);
+        viewPagerAdapter.updateViewPager();
     }
 
     public void startNFCScan(NdefTagCallback callback) {
