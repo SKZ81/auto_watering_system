@@ -1,0 +1,3 @@
+[submodule "HTTP-server"]
+	path = HTTP-server
+	url = git@github.com:SKZ81/AutoWatS-HTTP-server.git

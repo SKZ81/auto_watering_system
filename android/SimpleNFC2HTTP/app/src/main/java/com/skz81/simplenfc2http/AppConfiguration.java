@@ -6,11 +6,11 @@ import android.content.Context;
 public class AppConfiguration {
 
     // public static final String VARIETIES_URL = "/varieties";
-    public static final String VARIETIES_URL = "/cgi-bin/draft.py";
+    public static final String VARIETIES_URL = "/varieties";
     public static final String VARIETIES_IMG_URL = "/images/varieties/";
-    public static final String UPDATE_PLANT_URL = "/cgi-bin/update_plant.py";
-    public static final String PLANT_SEARCH_ID = "/cgi-bin/search_plant_id.py";
-    public static final String CREATE_TAG_URL = "/cgi-bin/create_tag.py";
+    public static final String UPDATE_PLANT_URL = "/plant/update";
+    public static final String PLANT_SEARCH_ID = "/plant/get";
+    public static final String CREATE_TAG_URL = "/plant/create_id";
     private static AppConfiguration instance = null;
     private static SharedPreferences sharedPreferences = null;
 
