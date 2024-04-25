@@ -1,51 +1,102 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
 
-    <RadioGroup
-        android:id="@+id/protocolRadioGroup"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
-
-        <RadioButton
-            android:id="@+id/httpRadioButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="HTTP" />
-
-        <RadioButton
-            android:id="@+id/httpsRadioButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="HTTPS" />
-
-    </RadioGroup>
-
-    <EditText
-        android:id="@+id/serverEditText"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/protocolRadioGroup"
-        android:hint="Server Address" />
+        android:gravity="fill_horizontal">
 
-    <EditText
-        android:id="@+id/portEditText"
+        <RadioGroup
+            android:id="@+id/protocolRadioGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/httpRadioButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="HTTP" />
+
+            <RadioButton
+                android:id="@+id/httpsRadioButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="HTTPS" />
+        </RadioGroup>
+
+        <Space
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="20" />
+
+        <!--  Active when detecting connection error -->
+        <Button
+            android:id="@+id/connectServerButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginRight="30dp"
+            android:clickable="false"
+            android:enabled="false"
+            android:text="Connect" />
+
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/serverEditText"
-        android:inputType="number"
-        android:hint="Port" />
+        android:orientation="horizontal">
 
-    <!--  Active when detecting connection error -->
-    <Button
-        android:id="@+id/connectServerButton"
-        android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/serverAdressLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Server Address:"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/serverEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/protocolRadioGroup"
+            android:hint="Server Address"
+            android:imeOptions="actionDone"
+            android:inputType="textUri"
+            android:minHeight="48dp"
+            android:singleLine="true" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/portEditText"
-        android:layout_marginTop="16dp"
-        android:clickable="false"
-        android:enabled="false"
-        android:text="Connect" />
+        android:orientation="horizontal">
 
+        <TextView
+            android:id="@+id/serverPortLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Port: "
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
-</RelativeLayout>
+        <EditText
+            android:id="@+id/portEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/serverEditText"
+            android:hint="Port"
+            android:inputType="number"
+            android:minHeight="48dp" />
+
+    </LinearLayout>
+
+</LinearLayout>
+
