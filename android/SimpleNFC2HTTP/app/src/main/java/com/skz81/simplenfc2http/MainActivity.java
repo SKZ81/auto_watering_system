@@ -1,14 +1,12 @@
 package com.skz81.simplenfc2http;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.Context;
 import android.graphics.Color;
-import android.nfc.tech.Ndef;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
+import android.nfc.tech.Ndef;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -19,20 +17,12 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
+
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.widget.ViewPager2;
+
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
-
-import com.skz81.simplenfc2http.R;
-import com.skz81.simplenfc2http.AppConfiguration;
-import com.skz81.simplenfc2http.SendToServerTask;
-import com.skz81.simplenfc2http.Varieties;
-import com.skz81.simplenfc2http.AppConfFragment;
-import com.skz81.simplenfc2http.ScanTagsFragment;
-import com.skz81.simplenfc2http.WriteTagFragment;
 
 public class MainActivity extends FragmentActivity
                           implements NfcAdapter.ReaderCallback,
@@ -42,9 +32,7 @@ public class MainActivity extends FragmentActivity
 
     private String appName;
     private NfcAdapter mNfcAdapter;
-    private TextView mTextView;
     private NdefTagCallback tagCB;
-    private AppConfiguration config;
     private Varieties varieties;
     private ScanTagsFragment scanTab;
     private WriteTagFragment updateTab;
@@ -62,16 +50,13 @@ public class MainActivity extends FragmentActivity
 
     public void toastDisplay(String tag, String message, boolean longDuration) {
         MainActivity mainActivity = this;
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Log.e(tag, message);
-                Toast.makeText(mainActivity, message,
-                               longDuration ?
-                                    Toast.LENGTH_SHORT :
-                                    Toast.LENGTH_LONG
-                              ).show();
-            }
+        runOnUiThread(() -> {
+            Log.e(tag, message);
+            Toast.makeText(mainActivity, message,
+                           longDuration ?
+                                Toast.LENGTH_SHORT :
+                                Toast.LENGTH_LONG
+                          ).show();
         });
     }
 
@@ -161,7 +146,6 @@ public class MainActivity extends FragmentActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         AppConfiguration.static_init(this);
-        config = AppConfiguration.instance();
         tagCB = null;
 
         viewPager = findViewById(R.id.viewPager);

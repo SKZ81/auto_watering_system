@@ -44,11 +44,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.skz81.simplenfc2http.AppConfiguration;
-import com.skz81.simplenfc2http.SendToServerTask;
-import com.skz81.simplenfc2http.SearchPlantId;
-import com.skz81.simplenfc2http.JSONInfoAdapter;
-import com.skz81.simplenfc2http.SharedJSONInfo;
 
 public class WriteTagFragment extends Fragment
                               implements Varieties.UpdateListener {
