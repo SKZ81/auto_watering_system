@@ -188,12 +188,14 @@ public class MainActivity extends FragmentActivity
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
         if (mNfcAdapter == null) {
             Toast.makeText(this, "NFC is not available", Toast.LENGTH_LONG).show();
-            finish();
             Log.e(TAG, "NFC not available.");
-            return;
+            if (BuildConfig.ABORT_NO_NFC) {
+                finish();
+                return;
+            }
         }
 
-        if (!mNfcAdapter.isEnabled()) {
+        if (mNfcAdapter != null && !mNfcAdapter.isEnabled()) {
             Toast.makeText(this, "Please enable NFC", Toast.LENGTH_LONG).show();
             Log.w(TAG, "NFC Disabled !..");
         }
@@ -222,7 +224,7 @@ public class MainActivity extends FragmentActivity
     }
 
     public void startNFCScan(NdefTagCallback callback) {
-        if (mNfcAdapter.isEnabled()) {
+        if (mNfcAdapter != null && mNfcAdapter.isEnabled()) {
             Log.d(TAG, "Start NFC Scan");
             tagCB = callback;
             mNfcAdapter.enableReaderMode(this, this,

@@ -19,11 +19,17 @@ android {
             useSupportLibrary true
         }
     }
-
+    buildFeatures {
+        buildConfig = true
+    }
     buildTypes {
+        debug {
+            buildConfigField "Boolean", "ABORT_NO_NFC", 'false'
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField "Boolean", "ABORT_NO_NFC", 'true'
         }
     }
     compileOptions {
