@@ -124,13 +124,13 @@ public class WriteTagFragment extends Fragment
             new SendToServerTask(new SendToServerTask.ReplyListener() {
                 @Override public void onReplyFromServer(String data) {
                     if (data == null || data != "OK") {
-                        parent.mainActivity.dumpError(TAG,
+                        parent.mainActivity.displayError(TAG,
                                 "not 'OK' reply from server (create tag ID)");
                     }
                     Log.d(TAG, "Tag ID=" + newUUID + " created on server.");
                 }
                 @Override public void onError(String error) {
-                    parent.mainActivity.dumpError(TAG, "Can't create tag in server DB:" + error);
+                    parent.mainActivity.displayError(TAG, "Can't create tag in server DB:" + error);
                 }
             }).POST(config.getServerURL() + config.CREATE_TAG_URL, json_data.toString());
         }
@@ -345,10 +345,12 @@ public class WriteTagFragment extends Fragment
     public void onVarietiesUpdated(Varieties update) {
         if (update == null) {
             varieties = new ArrayList<>();
+            Log.i(TAG, "onVarietiesUpdated: None");
         } else {
             varieties = update.getAll().stream().map(
                 variety -> new VarietyItem(variety.name(), variety.id())
             ).collect(Collectors.toCollection(ArrayList::new));
+            Log.i(TAG, "onVarietiesUpdated: " + varieties);
         }
         updateSpinnor();
     }
@@ -421,12 +423,11 @@ public class WriteTagFragment extends Fragment
         new SendToServerTask(new SendToServerTask.ReplyListener() {
             @Override public void onReplyFromServer(String data) {
                 if (data == "OK") {
-                    Toast.makeText(mainActivity, "Tag data updated !", Toast.LENGTH_LONG).show();
+                    mainActivity.toastDisplay(TAG, "Tag data updated !", true);
                 }
             }
             @Override public void onError(String error) {
-                Log.e(TAG, "Error while updating tag: " + error);
-                Toast.makeText(mainActivity, "Error while updating tag: " + error, Toast.LENGTH_LONG).show();
+                mainActivity.displayError(TAG, "Error while updating tag: " + error);
             }
         }).POST(config.getServerURL() + config.UPDATE_PLANT_URL, json_data.toString());
     }

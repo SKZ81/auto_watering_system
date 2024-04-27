@@ -113,14 +113,14 @@ public class Varieties extends ViewModel
             // notify "Update Tab" Spinner (and any other client) of varieties update
             notifySharedViewUpdate(this);
         } catch (JSONException e) {
-            mainActivity.dumpError(TAG, "Error parsing varieties JSON data: " + e.getMessage());
+            mainActivity.displayError(TAG, "Error parsing varieties JSON data: " + e.getMessage());
             notifySharedViewUpdate(null);
         }
     }
 
     @Override
     public void onError(String error) {
-        mainActivity.dumpError(TAG, "Can't fetch varieties: " + error);
+        mainActivity.displayError(TAG, "Can't fetch varieties: " + error);
         notifySharedViewUpdate(null);
     }
 

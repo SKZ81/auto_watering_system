@@ -1,8 +1,10 @@
 package com.skz81.simplenfc2http;
 
 import android.app.AlertDialog;
+import android.app.AlertDialog;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
@@ -44,8 +46,20 @@ public class MainActivity extends FragmentActivity
     public String appName() {return appName;}
     public Varieties varieties() {return varieties;}
 
-    public void dumpError(String tag, String message) {
-        toastDisplay(tag, message, true);
+    public void displayError(String tag, String message) {
+        MainActivity mainActivity = this;
+        Log.e(tag, message);
+        runOnUiThread(() -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(mainActivity);
+            builder.setTitle(tag +" Error")
+            .setMessage(message)
+            .setNegativeButton("Dismiss", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id)
+                    { dialog.dismiss(); }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        });
     }
 
     public void toastDisplay(String tag, String message, boolean longDuration) {
