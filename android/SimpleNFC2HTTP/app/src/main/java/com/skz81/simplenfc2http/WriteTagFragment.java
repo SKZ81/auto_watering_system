@@ -48,12 +48,12 @@ import org.json.JSONObject;
 public class WriteTagFragment extends Fragment
                               implements Varieties.UpdateListener {
 
-    protected class NdefWriteListener implements NdefTagCallback {
+    protected class FormatTagNdefListener implements NdefTagCallback {
         private String appName = null;
         private WriteTagFragment parent;
         private AppConfiguration config;
 
-        public NdefWriteListener(WriteTagFragment fragment, String appName,
+        public FormatTagNdefListener(WriteTagFragment fragment, String appName,
                                  AppConfiguration config) {
             this.parent = fragment;
             this.appName = appName;
@@ -209,7 +209,7 @@ public class WriteTagFragment extends Fragment
     private String newUUID = null;
 
     private NdefReadListener ndefReader;
-    private NdefWriteListener ndefWriter;
+    private FormatTagNdefListener ndefWriter;
 
     public WriteTagFragment() {}
 
@@ -265,7 +265,7 @@ public class WriteTagFragment extends Fragment
         addDateDeleteButtonListener(yieldingDateEdit, yieldingDeleteButton);
 
         ndefReader = new NdefReadListener(this);
-        ndefWriter = new NdefWriteListener(this, mainActivity.appName(), config);
+        ndefWriter = new FormatTagNdefListener(this, mainActivity.appName(), config);
 
         // Generate ID button click listener
         newPlantButton.setOnClickListener(new View.OnClickListener() {
@@ -364,6 +364,7 @@ public class WriteTagFragment extends Fragment
     }
 
     void buttonNewPlantClicked() {
+        // TODO : smarter way to "reuse" scanTagDialog
         newUUID = UUID.randomUUID().toString();
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Format Tag")
@@ -422,7 +423,8 @@ public class WriteTagFragment extends Fragment
         }
         new SendToServerTask(new SendToServerTask.ReplyListener() {
             @Override public void onReplyFromServer(String data) {
-                if (data == "OK") {
+                Log.i(TAG, "uopdate, replyListener.decodeServerResponse(" + data + ")");
+                if (data.strip().equals("{\"result\": \"OK\"}")) {
                     mainActivity.toastDisplay(TAG, "Tag data updated !", true);
                 }
             }
