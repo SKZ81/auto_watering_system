@@ -73,6 +73,6 @@ public class AppConfiguration {
     }
 
     public String getServerURL() {
-        return isHttps ? "https://" : "http://" + serverAddress + ":" + port;
+        return (isHttps ? "https://" : "http://") + serverAddress + ":" + port;
     }
 }

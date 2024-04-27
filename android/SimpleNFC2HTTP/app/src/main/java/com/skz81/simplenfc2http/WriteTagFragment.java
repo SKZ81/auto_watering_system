@@ -218,7 +218,7 @@ public class WriteTagFragment extends Fragment
         super.onAttach(context);
         config = AppConfiguration.instance();
         mainActivity = (MainActivity) context;
-        Log.d(TAG, "WriteTagFragment onAttach... mainActivity=" + mainActivity!=null ? mainActivity.toString() : "null");
+        Log.d(TAG, "WriteTagFragment onAttach... mainActivity=" + (mainActivity!=null ? mainActivity.toString() : "null"));
     }
 
     private void addDateFieldListener(EditText textview) {
@@ -409,7 +409,7 @@ public class WriteTagFragment extends Fragment
 
         JSONObject json_data = new JSONObject();
         try {
-            json_data.put("ID", plantId.getText());
+            json_data.put("UUID", plantId.getText());
             json_data.put("variety", variety.id());
             json_data.put("sex", genderRadioGroup.getCheckedRadioButtonId());
             json_data.put("germination_date", germinationDateEdit.getText());
