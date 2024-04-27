@@ -23,14 +23,14 @@ import org.json.JSONObject;
 public class SendToServerTask {
     private static final String TAG = "AutoWatS.HTTP";
 
-    private ReplyCB replyCallback;
+    private ReplyListener replyListener;
     private boolean error = false;
     private boolean cancelled = false;
     private boolean done = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private ConnectionStateWatcher connectionWatcher = null;
 
-    public interface ReplyCB { // TODO rename to ReplyListener
+    public interface ReplyListener {
         default String decodeServerResponse(InputStream input) {
             StringBuilder reply = new StringBuilder();
             try {
@@ -47,11 +47,14 @@ public class SendToServerTask {
             return reply.toString();
         }
 
-        default void onRequestFailure(int errorCode) {}
 
         void onReplyFromServer(String data);
 
-        void onError(String error);
+        default void onRequestFailure(int errorCode, String data) {
+            onError("Received (unhandled) error " + errorCode + " from server" +
+                       ((data != null) ? ", " + data : ""));
+        }
+        void onError(String data);
     }
 
     public interface ConnectionStateWatcher {
@@ -63,8 +66,8 @@ public class SendToServerTask {
         connectionWatcher = watcher;
     }
 
-    public SendToServerTask(@NonNull ReplyCB replyCallback) {
-        this.replyCallback = replyCallback;
+    public SendToServerTask(@NonNull ReplyListener replyListener) {
+        this.replyListener = replyListener;
     }
 
     public boolean isCancelled() {
@@ -110,8 +113,8 @@ public class SendToServerTask {
                 }
                 strParams = jsonParams.toString();
             } catch (JSONException e) {
-                if (replyCallback != null) {
-                    replyCallback.onError(("error encoding JSON params: " + e.getMessage()));
+                if (replyListener != null) {
+                    replyListener.onError("error encoding JSON params: " + e.getMessage());
                 }
             }
         }
@@ -120,7 +123,7 @@ public class SendToServerTask {
 
     public void execute(final String method, final String url, final String param) {
         if (cancelled) {
-            replyCallback.onError("Sever task cancelled.");
+            replyListener.onError("Sever task cancelled.");
             return;
         }
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -141,12 +144,12 @@ public class SendToServerTask {
                         public void run() {
                             done = true;
                             if (!cancelled && !error) {
-                                replyCallback.onReplyFromServer(result);
+                                replyListener.onReplyFromServer(result);
                                 if (connectionWatcher != null) {
                                     connectionWatcher.onServerConnectionOk();
                                 }
                             } else if (cancelled) {
-                                replyCallback.onError("Sever task cancelled.");
+                                replyListener.onError("Sever task cancelled.");
                             } // else onError() should be called directly in error cases
                         }
                     });
@@ -162,7 +165,7 @@ public class SendToServerTask {
                         message.append("\n");
                         message.append(elem.toString());
                     }
-                    replyCallback.onError(message.toString());
+                    replyListener.onError(message.toString());
                 }
             }
         });
@@ -172,14 +175,14 @@ public class SendToServerTask {
         // Check if correct number of parameters provided based on HTTP method
         if ((params[0].equals("GET") && params.length != 3) ||
             (params[0].equals("POST") && params.length != 3)) {
-            replyCallback.onError("Invalid number of parameters provided.");
+            replyListener.onError("Invalid number of parameters provided.");
             error = true;
             return null;
         }
 
         // Check if HTTP method is valid (either GET or POST)
         if (!params[0].equals("GET") && !params[0].equals("POST")) {
-            replyCallback.onError("Invalid HTTP method: " + params[0]);
+            replyListener.onError("Invalid HTTP method: " + params[0]);
             error = true;
             return null;
         }
@@ -215,14 +218,19 @@ public class SendToServerTask {
 
             int responseCode = urlConnection.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
-                replyCallback.onError("Server response code: " + responseCode);
+                InputStream errorStream = urlConnection.getErrorStream();
+                String errorData = "";
+                if (errorStream != null) {
+                    errorData = replyListener.decodeServerResponse(errorStream);
+                }
+                replyListener.onRequestFailure(responseCode, errorData);
                 return null;
             }
-            reply = replyCallback.decodeServerResponse(urlConnection.getInputStream());
+            reply = replyListener.decodeServerResponse(urlConnection.getInputStream());
 
         } catch (IOException e) {
             error = true;
-            replyCallback.onError("HTTP server communication error: " + e.getMessage());
+            replyListener.onError("HTTP server communication error: " + e.getMessage());
             if (connectionWatcher != null) {
                 connectionWatcher.onServerConnectionError("HTTP server communication error: " + e.getMessage());
             }
@@ -236,7 +244,7 @@ public class SendToServerTask {
                     reader.close();
                 }
             } catch (Exception e) {
-                replyCallback.onError("Error while disconnectong from server: " + e.getMessage());
+                replyListener.onError("Error while disconnectong from server: " + e.getMessage());
 
                 if (connectionWatcher != null) {
                     connectionWatcher.onServerConnectionError("Error while disconnectong from server: " + e.getMessage());

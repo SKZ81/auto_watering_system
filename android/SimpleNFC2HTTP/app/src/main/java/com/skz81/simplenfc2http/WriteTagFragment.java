@@ -121,7 +121,7 @@ public class WriteTagFragment extends Fragment
             }
             parent.stopScan();
             Log.d(TAG, "Send JSON to server for tag ID creation:" + json_data.toString());
-            new SendToServerTask(new SendToServerTask.ReplyCB() {
+            new SendToServerTask(new SendToServerTask.ReplyListener() {
                 @Override public void onReplyFromServer(String data) {
                     if (data == null || data != "OK") {
                         parent.mainActivity.dumpError(TAG,
@@ -418,7 +418,7 @@ public class WriteTagFragment extends Fragment
         } catch (JSONException e) {
             Log.e(TAG, "Error while serializing UPDATE req JSON param: " + e.getMessage());
         }
-        new SendToServerTask(new SendToServerTask.ReplyCB() {
+        new SendToServerTask(new SendToServerTask.ReplyListener() {
             @Override public void onReplyFromServer(String data) {
                 if (data == "OK") {
                     Toast.makeText(mainActivity, "Tag data updated !", Toast.LENGTH_LONG).show();

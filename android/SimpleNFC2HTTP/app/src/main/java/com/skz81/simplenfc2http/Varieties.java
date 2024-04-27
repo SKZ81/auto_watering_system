@@ -26,7 +26,7 @@ import com.skz81.simplenfc2http.SendToServerTask;
 
 
 public class Varieties extends ViewModel
-                       implements SendToServerTask.ReplyCB {
+                       implements SendToServerTask.ReplyListener {
 
     private static final String TAG = "AutoWatS.Varieties";
 
@@ -150,7 +150,7 @@ public class Varieties extends ViewModel
 
 
     private void fetchVarietyImage(Variety variety, String image_url) {
-        new SendToServerTask(new SendToServerTask.ReplyCB() {
+        new SendToServerTask(new SendToServerTask.ReplyListener() {
             @Override
             public String decodeServerResponse(InputStream input) {
                 ByteArrayOutputStream output = new ByteArrayOutputStream();

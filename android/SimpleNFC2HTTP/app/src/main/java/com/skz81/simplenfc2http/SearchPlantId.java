@@ -29,14 +29,15 @@ public class SearchPlantId {
         Map<String, String> params = new HashMap<>();
         params.put("uuid", uuid);
 
-        new SendToServerTask(new SendToServerTask.ReplyCB() {
+        new SendToServerTask(new SendToServerTask.ReplyListener() {
             @Override
-            public void onRequestFailure(int errorCode) {
+            public void onRequestFailure(int errorCode, String data) {
                 if (errorCode == 404 /*&& mainActivity != null*/) {
                     Log.e(TAG, "Unknown Tag...");
                     sharedJSON.setInfo(null);
                     // Toast.makeText(mainActivity, "Unknown Tag...", Toast.LENGTH_LONG).show();
                 }
+                onError("Server error " + errorCode + ((data != null) ? ", " + data : ""));
             }
             @Override
             public void onReplyFromServer(String data) {
