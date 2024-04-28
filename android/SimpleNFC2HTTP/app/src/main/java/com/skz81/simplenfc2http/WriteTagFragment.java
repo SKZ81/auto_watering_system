@@ -203,7 +203,6 @@ public class WriteTagFragment extends Fragment
     private AlertDialog scanTagDialog = null;
 
     private JSONInfoAdapter plantInfoAdapter;
-    private SharedJSONInfo plantInfo;
 
     private List<VarietyItem> varieties = null;
     private String newUUID = null;
@@ -294,9 +293,8 @@ public class WriteTagFragment extends Fragment
         Varieties varieties = Varieties.instance();
         varieties.observe(this);
 
-        plantInfo = new ViewModelProvider(requireActivity())
-                .get(SharedJSONInfo.class);
-        plantInfoAdapter = new JSONInfoAdapter(this, plantInfo);
+
+        plantInfoAdapter = new JSONInfoAdapter(this, FetchPlantInfo.sharedJSONView());
 
         plantInfoAdapter.addAttribute("UUID", String.class,
                                       value -> plantId.setText((String) value),

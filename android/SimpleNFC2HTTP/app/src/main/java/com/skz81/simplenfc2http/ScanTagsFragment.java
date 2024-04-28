@@ -47,11 +47,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.skz81.simplenfc2http.AppConfiguration;
-import com.skz81.simplenfc2http.NdefTagCallback;
-import com.skz81.simplenfc2http.SendToServerTask;
-import com.skz81.simplenfc2http.SearchPlantId;
-import com.skz81.simplenfc2http.SharedJSONInfo;
 
 public class ScanTagsFragment extends Fragment
                               implements NdefTagCallback {
@@ -67,9 +62,7 @@ public class ScanTagsFragment extends Fragment
     private TextView germinationDate;
     private TextView bloomingDate;
     private TextView yieldingDate;
-
     private JSONInfoAdapter plantInfoAdapter;
-    private SharedJSONInfo plantInfo;
 
     public ScanTagsFragment() {}
 
@@ -100,9 +93,7 @@ public class ScanTagsFragment extends Fragment
         bloomingDate.setText("<date>");
         yieldingDate.setText("<date>");
 
-        plantInfo = new ViewModelProvider(requireActivity())
-                        .get(SharedJSONInfo.class);
-        plantInfoAdapter = new JSONInfoAdapter(this, plantInfo);
+        plantInfoAdapter = new JSONInfoAdapter(this, FetchPlantInfo.sharedJSONView());
         plantInfoAdapter.addAttribute("UUID", String.class,
                                       value -> plantId.setText((String) value),
                                       () -> plantId.setText(""));
@@ -209,7 +200,7 @@ public class ScanTagsFragment extends Fragment
             uuid = new String(raw_uuid);
 
             Log.i(TAG, "Read tag UUID: " + uuid);
-            SearchPlantId.newQuery(plantInfo, uuid);
+            FetchPlantInfo.newQuery(uuid, mainActivity);
         } catch (IOException e) {
             Log.e(TAG, "Error scanning tag:" + e.getMessage());
         }

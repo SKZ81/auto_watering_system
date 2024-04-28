@@ -11,22 +11,23 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
-
-import com.skz81.simplenfc2http.SharedJSONInfo;
 
 public class JSONInfoAdapter {
     private Map<String, AttributeInfo> attributeMap;
 
-    public JSONInfoAdapter(Fragment parent, SharedJSONInfo info) {
+    public JSONInfoAdapter(Fragment parent, LiveData<JSONObject> info) {
         attributeMap = new HashMap<>();
-        info.getInfo().observe(parent, new Observer<JSONObject>() {
+        info.observe(parent, new Observer<JSONObject>() {
             @Override
-            public void onChanged(@Nullable JSONObject info) {
+            public void onChanged(@Nullable JSONObject json) {
                 clear();
-                if (info != null) {
+                if (json != null) {
                     try {
-                        parseJSON("", info);
+                        parseJSON("", json);
                     } catch(JSONException e) {
                         Log.e("JSONInfoAdapter", "Error while extracting info from JSON: " + e.getMessage());
                     }
