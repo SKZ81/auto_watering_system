@@ -1,11 +1,13 @@
 package com.skz81.simplenfc2http;
 
-import android.app.AlertDialog;
+import java.io.IOException;
+
 import android.app.AlertDialog;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.DialogInterface;
 import android.graphics.Color;
+import android.nfc.tech.Ndef;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.Ndef;
@@ -33,8 +35,6 @@ public class MainActivity extends FragmentActivity
     private static final String TAG = "AutoWatS-NFC";
 
     private String appName;
-    private NfcAdapter mNfcAdapter;
-    private NdefTagCallback tagCB;
     private Varieties varieties;
     private ScanTagsFragment scanTab;
     private WriteTagFragment updateTab;
@@ -42,6 +42,15 @@ public class MainActivity extends FragmentActivity
     private ViewPagerAdapter viewPagerAdapter;
     private AlertDialog progressDialog;
     private ViewPager2 viewPager;
+
+    private NfcAdapter mNfcAdapter;
+    public interface NdefTagListener {
+        void onNDEFDiscovered(Ndef ndef) throws IOException;
+    }
+    // default listener
+    private FetchPlantInfo scanTagListener;
+    // current actual listener, can be "overriden"
+    private NdefTagListener ndefListener;
 
     public String appName() {return appName;}
     public Varieties varieties() {return varieties;}
@@ -80,6 +89,7 @@ public class MainActivity extends FragmentActivity
         viewPagerAdapter.showPage(scanTab);
         viewPagerAdapter.showPage(updateTab);
         viewPagerAdapter.updateViewPager();
+        ndefListener = scanTagListener;
     }
 
     @Override
@@ -160,7 +170,7 @@ public class MainActivity extends FragmentActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         AppConfiguration.static_init(this);
-        tagCB = null;
+        scanTagListener = new FetchPlantInfo(this);
 
         viewPager = findViewById(R.id.viewPager);
         TabLayout tabLayout = findViewById(R.id.tabLayout);
@@ -169,11 +179,9 @@ public class MainActivity extends FragmentActivity
 
         new TabLayoutMediator(tabLayout, viewPager,
                 (tab, position) -> {
-                    // Log.i(TAG, "onConfigureTab, tab:" + tab.toString() + ", pos:" + position);
                     tab.setText(viewPagerAdapter.getPageTitle(position));
                 }
         ).attach();
-
 
         try {
             PackageManager packageManager = this.getPackageManager();
@@ -206,7 +214,6 @@ public class MainActivity extends FragmentActivity
     }
 
     private void setupViewPager(ViewPager2 viewPager) {
-        // Log.d(TAG, "this=")
         viewPagerAdapter = new ViewPagerAdapter(this);
         scanTab = new ScanTagsFragment();
         updateTab = new WriteTagFragment();
@@ -221,10 +228,17 @@ public class MainActivity extends FragmentActivity
         viewPagerAdapter.updateViewPager();
     }
 
-    public void startNFCScan(NdefTagCallback callback) {
+    public void setCustomNdefListener(NdefTagListener listener) {
+        this.ndefListener = listener;
+    }
+
+    public void resetCustomNdefListener() {
+        this.ndefListener = scanTagListener;
+    }
+
+    public void startNFCScan() {
         if (mNfcAdapter != null && mNfcAdapter.isEnabled()) {
             Log.d(TAG, "Start NFC Scan");
-            tagCB = callback;
             mNfcAdapter.enableReaderMode(this, this,
                                          NfcAdapter.FLAG_READER_NFC_A |
                                          NfcAdapter.FLAG_READER_NFC_B |
@@ -238,9 +252,8 @@ public class MainActivity extends FragmentActivity
     }
 
     public void stopNFCScan() {
-        if (tagCB != null) {
+        if (mNfcAdapter != null) {
             Log.d(TAG, "Stop NFC scan.");
-            tagCB = null;
             mNfcAdapter.disableReaderMode(this);
         }
     }
@@ -251,9 +264,18 @@ public class MainActivity extends FragmentActivity
         Ndef ndef = Ndef.get(tag);
 
         if (ndef == null) {
-            Toast.makeText(this, "Tag is not NDEF compatible", Toast.LENGTH_LONG).show();
-        } else if (tagCB != null) {
-            tagCB.onNDEFDiscovered(ndef);
+            toastDisplay(TAG, "Tag is not NDEF compatible", true);
+        } else if (ndefListener != null) {
+            try{
+                ndefListener.onNDEFDiscovered(ndef);
+            } catch (IOException e) {
+                toastDisplay(TAG, "Error processing tag: " + e.getMessage(), true);
+            }
+        }
+        try {
+            ndef.close();
+        } catch (Exception e) {
+            Log.w(TAG, "Error closing NDEF connection: " + e.getMessage());
         }
     }
 }

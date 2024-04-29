@@ -48,7 +48,7 @@ import org.json.JSONObject;
 public class WriteTagFragment extends Fragment
                               implements Varieties.UpdateListener {
 
-    protected class FormatTagNdefListener implements NdefTagCallback {
+    protected class FormatTagNdefListener implements MainActivity.NdefTagListener {
         private String appName = null;
         private WriteTagFragment parent;
         private AppConfiguration config;
@@ -76,7 +76,7 @@ public class WriteTagFragment extends Fragment
                 if (current == null) {throw new IOException("Tag is empty");}
                 NdefRecord[] records = current.getRecords();
                 if (records == null || records.length < 2) {
-                    throw new IOException("Bad TAG format: no message or not enough records");
+                    throw new IOException("Bad TAG format: empty message or not enough records");
                 }
                 if (records[0].getType().equals("T") ||
                     records[1].getPayload().equals(mainActivity.appName())) {
@@ -100,13 +100,9 @@ public class WriteTagFragment extends Fragment
                     throw new IOException("NFC connection lost");
                 }
             } catch (IOException e) {
-                // Log error message
                 Log.e(TAG, "IO Error while writing NDEF messages: " + e.getMessage());
-                // Toast.makeText(mainActivity, "Error writing tag...", Toast.LENGTH_LONG).show();
             } catch (FormatException e) {
-                // Log error message
                 Log.e(TAG, "Format Error while writing NDEF messages: " + e.getMessage());
-                // Toast.makeText(mainActivity, "Error writing tag...", Toast.LENGTH_LONG).show();
             } finally {
                 newUUID = null;
                 try {
@@ -136,7 +132,7 @@ public class WriteTagFragment extends Fragment
         }
     }
 
-    protected class NdefReadListener implements NdefTagCallback {
+    protected class NdefReadListener implements MainActivity.NdefTagListener {
         private WriteTagFragment parent;
         public NdefReadListener(WriteTagFragment fragment) {
             parent = fragment;
@@ -372,6 +368,7 @@ public class WriteTagFragment extends Fragment
                     public void onClick(DialogInterface dialog, int id) {
                         if (mainActivity != null) {
                             mainActivity.stopNFCScan();
+                            mainActivity.resetCustomNdefListener();
                         }
                         dialog.dismiss();
                         scanTagDialog = null;
@@ -379,7 +376,8 @@ public class WriteTagFragment extends Fragment
                     }
                 });
         if (mainActivity != null) {
-            mainActivity.startNFCScan(ndefWriter);
+            mainActivity.setCustomNdefListener(ndefWriter);
+            mainActivity.startNFCScan();
         }
         scanTagDialog = builder.create();
         scanTagDialog.show();
@@ -393,13 +391,15 @@ public class WriteTagFragment extends Fragment
                     public void onClick(DialogInterface dialog, int id) {
                         if (mainActivity != null) {
                             mainActivity.stopNFCScan();
+                            mainActivity.resetCustomNdefListener();
                         }
                         dialog.dismiss();
                         scanTagDialog = null;
                     }
                 });
         if (mainActivity != null) {
-            mainActivity.startNFCScan(ndefReader);
+            mainActivity.setCustomNdefListener(ndefReader);
+            mainActivity.startNFCScan();
         }
         scanTagDialog = builder.create();
         scanTagDialog.show();

@@ -47,9 +47,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+public class ScanTagsFragment extends Fragment {
 
-public class ScanTagsFragment extends Fragment
-                              implements NdefTagCallback {
     private static final String TAG = "AutoWatS-NFC-scan";
 
     private MainActivity mainActivity;
@@ -145,7 +144,7 @@ public class ScanTagsFragment extends Fragment
         super.onResume();
         // NOTE: onResume() is always called after onCreateView()
         if (mainActivity != null) {
-            mainActivity.startNFCScan(this);
+            mainActivity.startNFCScan();
         }
     }
 
@@ -166,44 +165,6 @@ public class ScanTagsFragment extends Fragment
             serverTask.cancel();
         }
         super.onDestroyView();
-    }
-
-    @Override
-    public void onNDEFDiscovered(Ndef ndef) {
-        NdefMessage message = ndef.getCachedNdefMessage();
-
-        try {
-            ndef.close();
-        } catch (Exception e) {
-            Log.w(TAG, "Error closing NDEF connection: " + e.getMessage());
-        }
-
-        try {
-            AppConfiguration config = AppConfiguration.instance();
-            String uuid = null;
-            if (message == null) {throw new IOException("Tag is empty");}
-            NdefRecord[] records = message.getRecords();
-            if (records == null || records.length < 2) {
-                throw new IOException("Bad TAG format: no message or not enough records");
-            }
-            if (records[0].getType().equals("T") ||
-                records[1].getPayload().equals(mainActivity.appName())) {
-                throw new IOException("Bad TAG format: bad record type/content");
-            }
-            if (serverTask != null) {
-                serverTask.cancel();
-            }
-            // TODO: utility fonction / class to extract UUID
-            byte[] payload = records[0].getPayload();
-            byte[] raw_uuid = new byte[payload.length - payload[0] - 1];
-            System.arraycopy(payload, payload[0] + 1, raw_uuid, 0, raw_uuid.length);
-            uuid = new String(raw_uuid);
-
-            Log.i(TAG, "Read tag UUID: " + uuid);
-            FetchPlantInfo.newQuery(uuid, mainActivity);
-        } catch (IOException e) {
-            Log.e(TAG, "Error scanning tag:" + e.getMessage());
-        }
     }
 
     public class LoadImageTask {
