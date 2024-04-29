@@ -32,12 +32,12 @@ public class FetchPlantInfo implements MainActivity.NdefTagListener {
     }
 
     @Override
-    public void onNDEFDiscovered(Ndef ndef) throws IOException {
+    public void onNDEFDiscovered(MainActivity.NdefAdapter ndef) throws IOException {
         AppConfiguration config = AppConfiguration.instance();
         String uuid = null;
         Map<String, String> params = new HashMap<>();
 
-        NdefMessage message = ndef.getCachedNdefMessage();
+        NdefMessage message = ndef.getNdefMessage();
         if (message == null) {throw new IOException("Tag is empty");}
         NdefRecord[] records = message.getRecords();
         if (records == null || records.length < 2) {

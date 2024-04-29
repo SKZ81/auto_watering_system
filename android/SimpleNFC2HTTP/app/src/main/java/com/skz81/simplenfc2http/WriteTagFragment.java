@@ -81,7 +81,7 @@ public class WriteTagFragment extends Fragment
         }
 
         @Override
-        public void onNDEFDiscovered(Ndef ndef) {
+        public void onNDEFDiscovered(MainActivity.NdefAdapter ndef) {
             JSONObject json_data = new JSONObject();
             NdefMessage message = new NdefMessage(
                     NdefRecord.createTextRecord("", newUUID),
@@ -92,7 +92,7 @@ public class WriteTagFragment extends Fragment
             Log.i(TAG, "AppName: " + mainActivity.appName());
             try {
                 json_data.put("uuid", newUUID);
-                NdefMessage cached = ndef.getCachedNdefMessage();
+                NdefMessage cached = ndef.getNdefMessage();
                 if (cached == null) {
                     throw new IOException("Tag is empty");
                 }

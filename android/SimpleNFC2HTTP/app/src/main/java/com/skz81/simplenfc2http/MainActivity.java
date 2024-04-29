@@ -10,7 +10,9 @@ import android.graphics.Color;
 import android.nfc.tech.Ndef;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
-import android.nfc.tech.Ndef;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.FormatException;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -45,12 +47,14 @@ public class MainActivity extends FragmentActivity
 
     private NfcAdapter mNfcAdapter;
     public interface NdefTagListener {
-        void onNDEFDiscovered(Ndef ndef) throws IOException;
+        void onNDEFDiscovered(NdefAdapter ndef) throws IOException;
     }
     // default listener
     private FetchPlantInfo scanTagListener;
     // current actual listener, can be "overriden"
     private NdefTagListener ndefListener;
+    // for debug purpose, tag injection needs to know if scanning is enabled
+    private boolean scanning = false;
 
     public String appName() {return appName;}
     public Varieties varieties() {return varieties;}
@@ -249,6 +253,7 @@ public class MainActivity extends FragmentActivity
         } else {
             Log.w(TAG, "NFC disabled, can't start scan !");
         }
+        scanning = true;
     }
 
     public void stopNFCScan() {
@@ -256,6 +261,7 @@ public class MainActivity extends FragmentActivity
             Log.d(TAG, "Stop NFC scan.");
             mNfcAdapter.disableReaderMode(this);
         }
+        scanning = false;
     }
 
     @Override
@@ -267,7 +273,7 @@ public class MainActivity extends FragmentActivity
             toastDisplay(TAG, "Tag is not NDEF compatible", true);
         } else if (ndefListener != null) {
             try{
-                ndefListener.onNDEFDiscovered(ndef);
+                ndefListener.onNDEFDiscovered(new TrueNdefAdapter(ndef));
             } catch (IOException e) {
                 toastDisplay(TAG, "Error processing tag: " + e.getMessage(), true);
             }
@@ -276,6 +282,76 @@ public class MainActivity extends FragmentActivity
             ndef.close();
         } catch (Exception e) {
             Log.w(TAG, "Error closing NDEF connection: " + e.getMessage());
+        }
+    }
+
+    public void simulateTagScan(String uuid) {
+        Log.i(TAG, "simulateTagScan: " + uuid +
+                   " scanning: " + (scanning ? "true" : "false"));
+        if (scanning) {
+            try {
+                ndefListener.onNDEFDiscovered(
+                    new FakeNdefAdapter(
+                        new NdefMessage(
+                            NdefRecord.createTextRecord("", uuid),
+                            NdefRecord.createTextRecord("", appName))));
+            } catch (IOException e) {
+                Log.w(TAG, "This exception should NOT happend ! " + e.getMessage());
+            }
+        }
+    }
+
+    public interface NdefAdapter {
+        public void connect() throws java.io.IOException;
+        public boolean isConnected();
+        public NdefMessage getNdefMessage();
+        public void writeNdefMessage(NdefMessage message) throws java.io.IOException,
+                                                                 FormatException;
+    }
+
+    public static class TrueNdefAdapter implements NdefAdapter {
+        private Ndef ndef;
+
+        TrueNdefAdapter(Ndef ndef) {
+            this.ndef = ndef;
+        }
+
+        @Override
+        public void connect() throws IOException {
+            ndef.connect();
+        }
+        @Override
+        public boolean isConnected() {
+            return ndef.isConnected();
+        }
+        @Override
+        public NdefMessage getNdefMessage() {
+            return ndef.getCachedNdefMessage();
+        }
+        @Override
+        public void writeNdefMessage(NdefMessage message) throws IOException,
+                                                                 FormatException {
+            ndef.writeNdefMessage(message);
+        }
+    }
+
+    public static class FakeNdefAdapter implements NdefAdapter {
+        private NdefMessage message;
+        public FakeNdefAdapter(NdefMessage message) {
+            this.message = message;
+        }
+        @Override
+        public void connect() {}
+        @Override
+        public boolean isConnected() {
+            return true;
+        }
+        @Override
+        public NdefMessage getNdefMessage() {
+            return message;
+        }
+        @Override
+        public void writeNdefMessage(NdefMessage message) throws IOException {
         }
     }
 }

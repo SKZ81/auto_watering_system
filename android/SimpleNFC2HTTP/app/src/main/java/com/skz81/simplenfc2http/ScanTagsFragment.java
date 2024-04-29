@@ -7,8 +7,13 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -111,6 +116,24 @@ public class ScanTagsFragment extends Fragment {
         plantInfoAdapter.addAttribute("yielding_date", String.class,
                                       value -> yieldingDate.setText((String) value),
                                       () -> yieldingDate.setText(""));
+
+        Button injectTagButton = new Button(getContext());
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        injectTagButton.setText("Inject Tag");
+        params.setMargins(0, 16, 0, 0); // 16dp marginTop
+        injectTagButton.setLayoutParams(params);
+        ((LinearLayout) view.findViewById(R.id.scanTabLayout)).addView(injectTagButton);
+
+        injectTagButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainActivity.simulateTagScan("b8c9de57-669f-4dc4-bd9f-eb1e6e6e67d9");
+            }
+        });
 
         return view;
     }
