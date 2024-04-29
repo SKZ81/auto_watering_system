@@ -142,29 +142,13 @@ public class ScanTagsFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // NOTE: onResume() is always called after onCreateView()
-        if (mainActivity != null) {
-            mainActivity.startNFCScan();
-        }
+        mainActivity.startNFCScan();
     }
 
     @Override
     public void onPause() {
-        if (mainActivity != null) {
-            mainActivity.stopNFCScan();
-        }
+        mainActivity.stopNFCScan();
         super.onPause();
-    }
-
-    @Override
-    public void onDestroyView() {
-        if (mainActivity != null) {
-            mainActivity.stopNFCScan();
-        }
-        if (serverTask != null) {
-            serverTask.cancel();
-        }
-        super.onDestroyView();
     }
 
     public class LoadImageTask {

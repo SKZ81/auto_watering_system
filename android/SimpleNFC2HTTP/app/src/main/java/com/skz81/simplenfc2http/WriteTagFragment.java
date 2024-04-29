@@ -49,32 +49,54 @@ public class WriteTagFragment extends Fragment
                               implements Varieties.UpdateListener {
 
     protected class FormatTagNdefListener implements MainActivity.NdefTagListener {
-        private String appName = null;
-        private WriteTagFragment parent;
+        private MainActivity mainActivity;
         private AppConfiguration config;
+        private AlertDialog formatTagDialog = null;
+        private String newUUID = null;
 
-        public FormatTagNdefListener(WriteTagFragment fragment, String appName,
-                                 AppConfiguration config) {
-            this.parent = fragment;
-            this.appName = appName;
-            this.config = config;
+        public FormatTagNdefListener(MainActivity main) {
+            mainActivity = main;
+            this.config = AppConfiguration.instance();
+            newUUID = UUID.randomUUID().toString();
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder.setTitle("Format Tag")
+                    .setMessage("This will format the tag, with\nnew UUID: " + newUUID
+                                + ".\nPlease scan the tag to proceed...")
+                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            if (mainActivity != null) {
+                                mainActivity.stopNFCScan();
+                                mainActivity.resetCustomNdefListener();
+                            }
+                            dialog.dismiss();
+                            formatTagDialog = null;
+                            newUUID = null;
+                        }
+                    });
+            mainActivity.stopNFCScan();
+            mainActivity.setCustomNdefListener(this);
+            formatTagDialog = builder.create();
+            formatTagDialog.show();
+            mainActivity.startNFCScan();
         }
 
         @Override
         public void onNDEFDiscovered(Ndef ndef) {
             JSONObject json_data = new JSONObject();
             NdefMessage message = new NdefMessage(
-                    NdefRecord.createTextRecord("", parent.getNewUUID()),
-                    NdefRecord.createTextRecord("", appName)
+                    NdefRecord.createTextRecord("", newUUID),
+                    NdefRecord.createTextRecord("", mainActivity.appName())
             );
             Log.i(TAG, "in Writer:onNDEFDiscovered, write tag info");
-            Log.i(TAG, "UUID: " + parent.getNewUUID());
-            Log.i(TAG, "AppName: " + appName);
+            Log.i(TAG, "UUID: " + newUUID);
+            Log.i(TAG, "AppName: " + mainActivity.appName());
             try {
-                json_data.put("uuid", parent.getNewUUID());
-                NdefMessage current = ndef.getCachedNdefMessage();
-                if (current == null) {throw new IOException("Tag is empty");}
-                NdefRecord[] records = current.getRecords();
+                json_data.put("uuid", newUUID);
+                NdefMessage cached = ndef.getCachedNdefMessage();
+                if (cached == null) {
+                    throw new IOException("Tag is empty");
+                }
+                NdefRecord[] records = cached.getRecords();
                 if (records == null || records.length < 2) {
                     throw new IOException("Bad TAG format: empty message or not enough records");
                 }
@@ -87,6 +109,7 @@ public class WriteTagFragment extends Fragment
                 json_data.put("old_uuid", old_uuid);
             } catch (JSONException e) {
                 Log.e(TAG, "Error serializing JSON for create tag:" + e.getMessage());
+                // TODO : O_o !!!!
             } catch (IOException e) {
                 Log.d(TAG, "No old UUID to remove found on the tag.");
             }
@@ -99,68 +122,32 @@ public class WriteTagFragment extends Fragment
                 if (!ndef.isConnected()) {
                     throw new IOException("NFC connection lost");
                 }
+            // TODO : O_o !!!!
             } catch (IOException e) {
                 Log.e(TAG, "IO Error while writing NDEF messages: " + e.getMessage());
             } catch (FormatException e) {
                 Log.e(TAG, "Format Error while writing NDEF messages: " + e.getMessage());
             } finally {
-                newUUID = null;
-                try {
-                    ndef.close();
-                } catch (Exception e) {
-                    Log.w(TAG, "Error closing NDEF connection: " + e.getMessage());
-                }
-            }
-            if (scanTagDialog != null) {
-                scanTagDialog.dismiss();
-                scanTagDialog = null;
-            }
-            parent.stopScan();
-            Log.d(TAG, "Send JSON to server for tag ID creation:" + json_data.toString());
-            new SendToServerTask(new SendToServerTask.ReplyListener() {
-                @Override public void onReplyFromServer(String data) {
-                    if (data == null || data != "OK") {
-                        parent.mainActivity.displayError(TAG,
-                                "not 'OK' reply from server (create tag ID)");
+                Log.d(TAG, "Send JSON to server for tag ID creation:" + json_data.toString());
+                new SendToServerTask(new SendToServerTask.ReplyListener() {
+                    @Override public void onReplyFromServer(String data) {
+                        if (data == null || !data.strip().equals("{\"result\": \"OK\"}")) {
+                            mainActivity.displayError(TAG,
+                                "Received unexpected JSON result with 200 OK on tag creation:\n" +
+                                ((data != null) ? data : "(null)"));
+                        }
+                        mainActivity.toastDisplay(TAG, "Tag formatted.", true);
                     }
-                    Log.d(TAG, "Tag ID=" + newUUID + " created on server.");
-                }
-                @Override public void onError(String error) {
-                    parent.mainActivity.displayError(TAG, "Can't create tag in server DB:" + error);
-                }
-            }).POST(config.getServerURL() + config.CREATE_TAG_URL, json_data.toString());
-        }
-    }
-
-    protected class NdefReadListener implements MainActivity.NdefTagListener {
-        private WriteTagFragment parent;
-        public NdefReadListener(WriteTagFragment fragment) {
-            parent = fragment;
-        }
-        @Override
-        public void onNDEFDiscovered(Ndef ndef) {
-            NdefMessage message = ndef.getCachedNdefMessage();
-            if (message == null) {return;}
-            NdefRecord[] records = message.getRecords();
-            if (records != null) {
-                for (int j = 0; j < records.length; j++) {
-                    NdefRecord record = records[j];
-                    Log.i(TAG, "  Record " + (j + 1) + ":");
-                    Log.i(TAG, "    TNF (Type Name Format): " + record.getTnf());
-                    Log.i(TAG, "    Type: " + new String(record.getType()));
-                    Log.i(TAG, "    Payload: " + new String(record.getPayload()));
-                }
+                    @Override public void onError(String error) {
+                        mainActivity.displayError(TAG, "Can't create tag UUID on server: " + error);
+                    }
+                }).POST(config.getServerURL() + config.CREATE_TAG_URL, json_data.toString());
             }
-            try {
-                ndef.close();
-            } catch (Exception e) {
-                Log.w(TAG, "Error closing NDEF connection: " + e.getMessage(), e);
+            if (formatTagDialog != null) {
+                formatTagDialog.dismiss();
+                formatTagDialog = null;
             }
-            if (scanTagDialog != null) {
-                scanTagDialog.dismiss();
-                scanTagDialog = null;
-            }
-            parent.stopScan();
+            mainActivity.resetCustomNdefListener();
         }
     }
 
@@ -196,15 +183,10 @@ public class WriteTagFragment extends Fragment
 
     private MainActivity mainActivity;
     private Calendar calendar;
-    private AlertDialog scanTagDialog = null;
 
     private JSONInfoAdapter plantInfoAdapter;
 
     private List<VarietyItem> varieties = null;
-    private String newUUID = null;
-
-    private NdefReadListener ndefReader;
-    private FormatTagNdefListener ndefWriter;
 
     public WriteTagFragment() {}
 
@@ -258,9 +240,6 @@ public class WriteTagFragment extends Fragment
         addDateDeleteButtonListener(germinationDateEdit, germinationDeleteButton);
         addDateDeleteButtonListener(bloomingDateEdit, bloomingDeleteButton);
         addDateDeleteButtonListener(yieldingDateEdit, yieldingDeleteButton);
-
-        ndefReader = new NdefReadListener(this);
-        ndefWriter = new FormatTagNdefListener(this, mainActivity.appName(), config);
 
         // Generate ID button click listener
         newPlantButton.setOnClickListener(new View.OnClickListener() {
@@ -358,51 +337,11 @@ public class WriteTagFragment extends Fragment
     }
 
     void buttonNewPlantClicked() {
-        // TODO : smarter way to "reuse" scanTagDialog
-        newUUID = UUID.randomUUID().toString();
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Format Tag")
-                .setMessage("This will format the tag, with\nnew UUID: " + newUUID
-                            + ".\nPlease scan the tag to proceed...")
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        if (mainActivity != null) {
-                            mainActivity.stopNFCScan();
-                            mainActivity.resetCustomNdefListener();
-                        }
-                        dialog.dismiss();
-                        scanTagDialog = null;
-                        newUUID = null;
-                    }
-                });
-        if (mainActivity != null) {
-            mainActivity.setCustomNdefListener(ndefWriter);
-            mainActivity.startNFCScan();
-        }
-        scanTagDialog = builder.create();
-        scanTagDialog.show();
+        // the listener is "one-shot" and resets default listener
+        mainActivity.setCustomNdefListener(new FormatTagNdefListener(mainActivity));
     }
 
     void buttonScanTagClicked() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Scan Tag")
-                .setMessage("Please scan the tag to display data...")
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        if (mainActivity != null) {
-                            mainActivity.stopNFCScan();
-                            mainActivity.resetCustomNdefListener();
-                        }
-                        dialog.dismiss();
-                        scanTagDialog = null;
-                    }
-                });
-        if (mainActivity != null) {
-            mainActivity.setCustomNdefListener(ndefReader);
-            mainActivity.startNFCScan();
-        }
-        scanTagDialog = builder.create();
-        scanTagDialog.show();
     }
 
     void buttonUpdateInfoClicked() {
@@ -432,12 +371,6 @@ public class WriteTagFragment extends Fragment
         }).POST(config.getServerURL() + config.UPDATE_PLANT_URL, json_data.toString());
     }
 
-    public void stopScan() {
-        if (mainActivity != null) {
-            mainActivity.stopNFCScan();
-        }
-    }
-
     public void showDatePickerDialog(EditText v) {
         // int fieldId = v.getId(); // Get the id of the clicked field
         int year = calendar.get(Calendar.YEAR);
@@ -462,7 +395,4 @@ public class WriteTagFragment extends Fragment
         datePickerDialog.show();
     }
 
-    public String getNewUUID() {
-        return newUUID;
-    }
 }
