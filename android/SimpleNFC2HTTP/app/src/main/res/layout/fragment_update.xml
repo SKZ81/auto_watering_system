@@ -133,20 +133,18 @@
         android:text="Update Server"
         android:layout_marginTop="16dp" />
 
-    <!--  Scan Tag Button -->
     <Button
-        android:id="@+id/scanTagButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Scan Tag"
-        android:layout_marginTop="16dp" />
-
-    <!--  Button -->
-    <Button
-        android:id="@+id/newPlantButton"
+        android:id="@+id/formatTagButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="New plant - format Tag"
+        android:layout_marginTop="16dp" />
+
+    <Button
+        android:id="@+id/discardTagButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Discard Tag"
         android:layout_marginTop="16dp" />
 
 </LinearLayout>

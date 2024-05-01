@@ -11,6 +11,7 @@ public class AppConfiguration {
     public static final String UPDATE_PLANT_URL = "/plant/update";
     public static final String PLANT_SEARCH_ID = "/plant/get";
     public static final String CREATE_TAG_URL = "/plant/create_id";
+    public static final String DISCARD_UUID_URL = "/plant/discard_id";
     public static final String DEBUG_GET_UUIDS ="/debug/get_uuids";
 
     private static AppConfiguration instance = null;

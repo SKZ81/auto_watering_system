@@ -31,27 +31,34 @@ public class FetchPlantInfo implements MainActivity.NdefTagListener {
         this.mainActivity = mainActivity;
     }
 
-    @Override
-    public void onNDEFDiscovered(MainActivity.NdefAdapter ndef) throws IOException {
-        AppConfiguration config = AppConfiguration.instance();
-        String uuid = null;
-        Map<String, String> params = new HashMap<>();
-
-        NdefMessage message = ndef.getNdefMessage();
-        if (message == null) {throw new IOException("Tag is empty");}
+    public static String getUUIDFromNdefMessage(NdefMessage message,
+                                                String appName)
+                                                throws IOException {
         NdefRecord[] records = message.getRecords();
         if (records == null || records.length < 2) {
             throw new IOException("Bad TAG format: no message or not enough records");
         }
         if (records[0].getType().equals("T") ||
-            records[1].getPayload().equals(mainActivity.appName())) {
+            records[1].getPayload().equals(appName)) {
             throw new IOException("Bad TAG format: bad record type/content");
         }
         // TODO: utility fonction / class to extract UUID
         byte[] payload = records[0].getPayload();
         byte[] raw_uuid = new byte[payload.length - payload[0] - 1];
         System.arraycopy(payload, payload[0] + 1, raw_uuid, 0, raw_uuid.length);
-        uuid = new String(raw_uuid);
+        return new String(raw_uuid);
+    }
+
+    @Override
+    public void onNDEFDiscovered(MainActivity.NdefAdapter ndef) throws IOException {
+        AppConfiguration config = AppConfiguration.instance();
+        Map<String, String> params = new HashMap<>();
+
+        NdefMessage message = ndef.getNdefMessage();
+        if (message == null) {
+            throw new IOException("Tag is empty");
+        }
+        String uuid = getUUIDFromNdefMessage(message, mainActivity.appName());
         Log.i(TAG, "Read tag UUID: " + uuid);
         params.put("uuid", uuid);
         new SendToServerTask(new SendToServerTask.ReplyListener() {

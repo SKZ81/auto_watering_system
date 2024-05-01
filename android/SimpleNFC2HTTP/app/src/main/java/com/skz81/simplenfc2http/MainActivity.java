@@ -39,7 +39,7 @@ public class MainActivity extends FragmentActivity
     private String appName;
     private Varieties varieties;
     private ScanTagsFragment scanTab;
-    private WriteTagFragment updateTab;
+    private UpdateFragment updateTab;
     private AppConfFragment configTab;
     private ViewPagerAdapter viewPagerAdapter;
     private AlertDialog progressDialog;
@@ -220,7 +220,7 @@ public class MainActivity extends FragmentActivity
     private void setupViewPager(ViewPager2 viewPager) {
         viewPagerAdapter = new ViewPagerAdapter(this);
         scanTab = new ScanTagsFragment();
-        updateTab = new WriteTagFragment();
+        updateTab = new UpdateFragment();
         configTab = new AppConfFragment();
 
         viewPagerAdapter.addPage(scanTab, "Scan", true);
