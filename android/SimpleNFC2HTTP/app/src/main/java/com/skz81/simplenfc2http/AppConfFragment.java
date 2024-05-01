@@ -34,7 +34,7 @@ public class AppConfFragment extends Fragment
         super.onAttach(context);
         config = AppConfiguration.instance();
         mainActivity = (MainActivity) context;
-        Log.d(TAG, "WriteTagFragment onAttach... mainActivity=" + ((mainActivity!=null) ? mainActivity.toString() : "null"));
+        Log.d(TAG, "AppConfFragment onAttach... mainActivity=" + ((mainActivity!=null) ? mainActivity.toString() : "null"));
     }
 
     @Override

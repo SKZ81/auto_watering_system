@@ -143,14 +143,16 @@ public class SendToServerTask {
                         @Override
                         public void run() {
                             done = true;
-                            if (!cancelled && !error) {
+                            if (result != null) {
                                 replyListener.onReplyFromServer(result);
                                 if (connectionWatcher != null) {
                                     connectionWatcher.onServerConnectionOk();
                                 }
                             } else if (cancelled) {
                                 replyListener.onError("Sever task cancelled.");
-                            } // else onError() should be called directly in error cases
+                            } else if (!error) {
+                                replyListener.onError("Got no answer to precess (null) but HTTP task not cancelled nor errored");
+                            }
                         }
                     });
                 } catch (Exception e) {
