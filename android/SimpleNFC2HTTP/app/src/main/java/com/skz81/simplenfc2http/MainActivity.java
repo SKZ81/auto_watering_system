@@ -134,7 +134,7 @@ public class MainActivity extends FragmentActivity
             ll.addView(tvText);
 
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setCancelable(true);
+            builder.setCancelable(false);
             builder.setView(ll);
 
             progressDialog = builder.create();
