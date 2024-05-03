@@ -1,5 +1,7 @@
 package com.skz81.simplenfc2http;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,10 +19,9 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
 
 public class JSONInfoAdapter {
-    private Map<String, AttributeInfo> attributeMap;
+    private Map<Pattern, AttributeInfo> attributeMap = new HashMap<>();
 
     public JSONInfoAdapter(Fragment parent, LiveData<JSONObject> info) {
-        attributeMap = new HashMap<>();
         info.observe(parent, new Observer<JSONObject>() {
             @Override
             public void onChanged(@Nullable JSONObject json) {
@@ -36,10 +37,18 @@ public class JSONInfoAdapter {
         });
     }
 
+    public JSONInfoAdapter() {}
+
     public void addAttribute(String path, Class<?> expectedType,
                              AttributeInfo.SetterCallback set,
                              AttributeInfo.CleanerCallback clear) {
-        attributeMap.put(path, new AttributeInfo(expectedType, set, clear));
+        attributeMap.put(Pattern.compile(Pattern.quote(path)), new AttributeInfo(expectedType, set, clear));
+    }
+
+    public void addAttributeRegex(String pathRegex, Class<?> expectedType,
+                             AttributeInfo.SetterCallback set,
+                             AttributeInfo.CleanerCallback clear) {
+        attributeMap.put(Pattern.compile(pathRegex), new AttributeInfo(expectedType, set, clear));
     }
 
     public void clear() {
@@ -81,14 +90,15 @@ public class JSONInfoAdapter {
         }
     }
 
-    private boolean setAttribute(String path, String type, Object value) {
+    private void setAttribute(String path, String type, Object value) {
+        attributeMap.forEach((pattern, attributeInfo) -> {
+            if(pattern.matcher(path).find()) {
+                if (attributeInfo != null && attributeInfo.expectedType.equals(type)) {
+                    attributeInfo.setter.execute(value);
+                }
+            }
+        });
         AttributeInfo attributeInfo = attributeMap.get(path);
-        if (attributeInfo != null && attributeInfo.expectedType.equals(type)) {
-            attributeInfo.setter.execute(value);
-            return true;
-        } else {
-            return false; // Skip the value if the path doesn't match or the types don't match
-        }
     }
 
 

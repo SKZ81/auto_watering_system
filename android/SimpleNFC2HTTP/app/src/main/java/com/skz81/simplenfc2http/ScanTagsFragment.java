@@ -131,7 +131,7 @@ public class ScanTagsFragment extends Fragment {
         injectTagButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mainActivity.simulateTagScan("b8c9de57-669f-4dc4-bd9f-eb1e6e6e67d9");
+                new DebugTagInjector(mainActivity);
             }
         });
 
