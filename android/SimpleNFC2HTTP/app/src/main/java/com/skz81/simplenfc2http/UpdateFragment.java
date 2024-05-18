@@ -46,7 +46,7 @@ import org.json.JSONObject;
 
 
 public class UpdateFragment extends Fragment
-                              implements Varieties.UpdateListener {
+                              /*implements Varieties.UpdateListener*/ {
 
     private static final String TAG = "AutoWatS-NFC-update";
 
@@ -68,6 +68,7 @@ public class UpdateFragment extends Fragment
     private MainActivity mainActivity;
     private Calendar calendar;
 
+    private LocalDatabase database;
     private JSONInfoAdapter plantInfoAdapter;
 
     private List<VarietyItem> varieties = null;
@@ -144,8 +145,16 @@ public class UpdateFragment extends Fragment
             }
         });
 
-        Varieties varieties = Varieties.instance();
-        varieties.observe(this);
+        database = LocalDatabase.getInstance(mainActivity);
+        database.varietyDao().getAllVarieties().observe(this, new Observer<List<Varieties.Variety>>() {
+            @Override
+            public void onChanged(List<Varieties.Variety> varieties) {
+                List<VarietyItem> varietyItems = varieties.stream().map(
+                    variety -> new VarietyItem(variety.getName(), variety.getId())
+                ).collect(Collectors.toCollection(ArrayList::new));
+                updateSpinnor(varietyItems);
+            }
+        });
 
 
         plantInfoAdapter = new JSONInfoAdapter(this, FetchPlantInfo.sharedJSONView());
@@ -173,11 +182,11 @@ public class UpdateFragment extends Fragment
     }
 
     private void setVarietySpinner(int varietyId) {
-        Varieties.Variety variety = Varieties.instance().getById(varietyId);
+        Varieties.Variety variety = mainActivity.varieties().getById(varietyId);
         SpinnerAdapter spinnerAdapter = varietySpinner.getAdapter();
         for (int i = 0; i < spinnerAdapter.getCount(); i++) {
             VarietyItem item = (VarietyItem)spinnerAdapter.getItem(i);
-            if (item.id() == variety.id()) {
+            if (item.id() == variety.getId()) {
                 varietySpinner.setSelection(i);
                 break; // Exit the loop once the item is found
             }
@@ -193,21 +202,21 @@ public class UpdateFragment extends Fragment
         }
     }
 
-    @Override
-    public void onVarietiesUpdated(Varieties update) {
-        if (update == null) {
-            varieties = new ArrayList<>();
-            Log.i(TAG, "onVarietiesUpdated: None");
-        } else {
-            varieties = update.getAll().stream().map(
-                variety -> new VarietyItem(variety.name(), variety.id())
-            ).collect(Collectors.toCollection(ArrayList::new));
-            Log.i(TAG, "onVarietiesUpdated: " + varieties);
-        }
-        updateSpinnor();
-    }
+    // @Override
+    // public void onVarietiesUpdated(Varieties update) {
+    //     if (update == null) {
+    //         varieties = new ArrayList<>();
+    //         Log.i(TAG, "onVarietiesUpdated: None");
+    //     } else {
+    //         varieties = update.getAll().stream().map(
+    //             variety -> new VarietyItem(variety.name(), variety.id())
+    //         ).collect(Collectors.toCollection(ArrayList::new));
+    //         Log.i(TAG, "onVarietiesUpdated: " + varieties);
+    //     }
+    //     updateSpinnor();
+    // }
 
-    private void updateSpinnor() {
+    private void updateSpinnor(List<VarietyItem> varieties) {
         if (varieties == null || varietySpinner == null) return;
 
         ArrayAdapter<VarietyItem> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, varieties);

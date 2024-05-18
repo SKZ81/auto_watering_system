@@ -22,7 +22,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.LiveData;
 
 import android.nfc.tech.Ndef;
@@ -57,7 +56,6 @@ public class ScanTagsFragment extends Fragment {
     private static final String TAG = "AutoWatS-NFC-scan";
 
     private MainActivity mainActivity;
-    private SendToServerTask serverTask = null;
 
     private ImageView varietyIcon;
     private TextView varietyName;
@@ -67,6 +65,8 @@ public class ScanTagsFragment extends Fragment {
     private TextView bloomingDate;
     private TextView yieldingDate;
     private JSONInfoAdapter plantInfoAdapter;
+    private LocalDatabase database;
+    private FetchPlantInfo.PlantInfoLifecycleOwner plantInfoLifecycleOwner;
 
     public ScanTagsFragment() {}
 
@@ -97,12 +97,14 @@ public class ScanTagsFragment extends Fragment {
         bloomingDate.setText("<date>");
         yieldingDate.setText("<date>");
 
+        database = LocalDatabase.getInstance(requireContext());
+
         plantInfoAdapter = new JSONInfoAdapter(this, FetchPlantInfo.sharedJSONView());
         plantInfoAdapter.addAttribute("UUID", String.class,
                                       value -> plantId.setText((String) value),
                                       () -> plantId.setText(""));
         plantInfoAdapter.addAttribute("variety", Integer.class,
-                                       value -> setVarietyFields((Integer) value),
+                                       value -> displayPlantVariety((Integer) value),
                                        () -> clearVarietyFields());
         plantInfoAdapter.addAttribute("sex", Integer.class,
                                       value -> setGenderField((Integer) value),
@@ -138,10 +140,26 @@ public class ScanTagsFragment extends Fragment {
         return view;
     }
 
-    private void setVarietyFields(int varietyId) {
-        Varieties.Variety variety = Varieties.instance().getById(varietyId);
-        varietyName.setText(variety.name());
-        new LoadImageTask(varietyIcon).execute(variety.imageBase64());
+    private void displayPlantVariety(int varietyId) {
+        if (plantInfoLifecycleOwner != null) {
+            plantInfoLifecycleOwner.stop();
+        }
+        // called when FetchPlantInfo got new infos
+        Varieties.Variety variety = mainActivity.varieties().getById(varietyId);
+        setVarietyFields(variety);
+        // catch any variety further update in database
+        plantInfoLifecycleOwner = new FetchPlantInfo.PlantInfoLifecycleOwner();
+        database.varietyDao().getVarietyById(varietyId).observe(plantInfoLifecycleOwner, new Observer<Varieties.Variety>() {
+            @Override
+            public void onChanged(Varieties.Variety variety) {
+                setVarietyFields(variety);
+            }
+        });
+    }
+    private void setVarietyFields(Varieties.Variety variety) {
+        // Actually update the UI
+        varietyName.setText(variety.getName());
+        new LoadImageTask(varietyIcon).execute(variety.getImageBase64());
     }
 
     private void clearVarietyFields() {
@@ -158,8 +176,7 @@ public class ScanTagsFragment extends Fragment {
     }
 
     private void resetGenderField(int gender) {
-        RadioButton radioBtn = (RadioButton) genderRadioGroup.getChildAt(gender);
-        radioBtn.setChecked(true);
+        genderRadioGroup.clearCheck();
     }
 
     @Override

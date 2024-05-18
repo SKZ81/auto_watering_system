@@ -43,6 +43,7 @@ public class MainActivity extends FragmentActivity
     private AppConfFragment configTab;
     private ViewPagerAdapter viewPagerAdapter;
     private AlertDialog progressDialog;
+    private ConnectionManager connectionManager;
     private ViewPager2 viewPager;
 
     private NfcAdapter mNfcAdapter;
@@ -55,6 +56,8 @@ public class MainActivity extends FragmentActivity
     private NdefTagListener ndefListener;
     // for debug purpose, tag injection needs to know if scanning is enabled
     private boolean scanning = false;
+
+    private LocalDatabase database;
 
     public String appName() {return appName;}
     public Varieties varieties() {return varieties;}
@@ -175,6 +178,7 @@ public class MainActivity extends FragmentActivity
         setContentView(R.layout.activity_main);
         AppConfiguration.static_init(this);
         scanTagListener = new FetchPlantInfo(this);
+        varieties = new Varieties(this);
 
         viewPager = findViewById(R.id.viewPager);
         TabLayout tabLayout = findViewById(R.id.tabLayout);
@@ -186,6 +190,8 @@ public class MainActivity extends FragmentActivity
                     tab.setText(viewPagerAdapter.getPageTitle(position));
                 }
         ).attach();
+
+        database = LocalDatabase.getInstance(this);
 
         try {
             PackageManager packageManager = this.getPackageManager();
@@ -209,12 +215,13 @@ public class MainActivity extends FragmentActivity
             Toast.makeText(this, "Please enable NFC", Toast.LENGTH_LONG).show();
             Log.w(TAG, "NFC Disabled !..");
         }
-        connectServer();
+        // connectServer();
+        connectionManager = new ConnectionManager(this);
+        connectionManager.checkTimestamps();
     }
 
     public void connectServer() {
         showLoadingDialog();
-        varieties = Varieties.instance(this);
     }
 
     private void setupViewPager(ViewPager2 viewPager) {
