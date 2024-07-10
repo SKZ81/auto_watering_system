@@ -1,67 +1,5 @@
 <html>
   <head>
-    <script>
-        String.prototype.format = function () {
-            "use strict";
-            var str = this.toString();
-            if (arguments.length) {
-                var t = typeof arguments[0];
-                var key;
-                var args = ("string" === t || "number" === t) ?
-                    Array.prototype.slice.call(arguments)
-                    : arguments[0];
-                for (key in args) {
-                    str = str.replace(new RegExp("\\{" + key + "\\}", "gi"), args[key]);
-                }
-            }
-            return str;
-        };
-
-        function on_switch_change_cb(cbox, endpoint) {
-            if (cbox.checked) {
-                alert(`checked : ${endpoint}`);
-            } else {
-                alert(`not checked : ${endpoint}`);
-            }
-        };
-
-        function generate_checkbox_group(grp_list) {
-            var html_str = '<h1>AutoWatS control panel</h1>\
-                            <hr>\
-                           ';
-            var tpl_switch = '\
-                <label class="toggle">\
-                <input class="toggle-checkbox" type="checkbox" onchange="post_switch_state(this, \'{endpoint}\')">\
-                <div class="toggle-switch"></div>\
-                <span class="toggle-label">{label}</span>\
-                </label><br>\
-            ';
-            for(let i = 0; i < grp_list.length; i++) {
-                var group = grp_list[i];
-                html_str += '<h2>{group_name}</h2>'.format(group);
-                for (let j = 0; j < group.switches.length; j++) {
-                    var swtch = group.switches[j];
-                    html_str += tpl_switch.format(swtch);
-                }
-            }
-            return html_str;
-        };
-
-        function post_switch_state(cbox, endpoint) {
-          var xhttp = new XMLHttpRequest();
-          xhttp.onreadystatechange = function() {
-            if (this.readyState == 4) {
-              if (this.status != 200) {
-                cbox.checked = false;
-                // TODO : somehow log the error (get the rzeason in the HTML response)
-              }
-            }
-          };
-          xhttp.open("POST", "endpoint_update", true);
-          var state = cbox.checked ? 1 : 0;
-          xhttp.send(`endpoint=${endpoint}\nstate=${state}`);
-        }
-    </script>
     <style>
         *,
         *:before,
@@ -120,7 +58,128 @@
             position: relative;
             top: 2px;
         }
+       .button {
+            display: inline-block;
+            position: relative;
+            background-color: #468fe8;
+            color: white;
+            margin: 10px;
+            padding: 0 20px;
+            text-align: center;
+            text-decoration: none;
+            font: bold 12px/25px Arial, sans-serif;
+        }
     </style>
+
+        <script>
+        const counters_refresh_period = 2; // seconds
+        const counters_URL = "counters";
+
+        String.prototype.format = function () {
+            "use strict";
+            var str = this.toString();
+            if (arguments.length) {
+                var t = typeof arguments[0];
+                var key;
+                var args = ("string" === t || "number" === t) ?
+                    Array.prototype.slice.call(arguments)
+                    : arguments[0];
+                for (key in args) {
+                    str = str.replace(new RegExp("\\{" + key + "\\}", "gi"), args[key]);
+                }
+            }
+            return str;
+        };
+
+        function on_switch_change_cb(cbox, endpoint) {
+            if (cbox.checked) {
+                alert(`checked : ${endpoint}`);
+            } else {
+                alert(`not checked : ${endpoint}`);
+            }
+        };
+
+        function generate_checkbox_group(grp_list) {
+            var html_str = '<h1>AutoWatS control panel</h1>\
+                            <hr>\
+                           ';
+            var tpl_switch = '\
+                <label class="toggle">\
+                <input class="toggle-checkbox" type="checkbox" onchange="post_switch_state(this, \'{endpoint}\')">\
+                <div class="toggle-switch"></div>\
+                <span class="toggle-label">{label}</span>\
+                </label><br>\
+            ';
+            for(let i = 0; i < grp_list.length; i++) {
+                var group = grp_list[i];
+                html_str += '<h2>{group_name}</h2>'.format(group);
+                for (let j = 0; j < group.switches.length; j++) {
+                    var swtch = group.switches[j];
+                    html_str += tpl_switch.format(swtch);
+                }
+            }
+
+            return html_str;
+        };
+
+        function post_switch_state(cbox, endpoint) {
+          var xhttp = new XMLHttpRequest();
+          xhttp.onreadystatechange = function() {
+            if (this.readyState == 4) {
+              if (this.status != 200) {
+                cbox.checked = false;
+                // TODO : somehow log the error (get the rzeason in the HTML response)
+              }
+            }
+          };
+          xhttp.open("POST", "endpoint_update", true);
+          var state = cbox.checked ? 1 : 0;
+          xhttp.send(`endpoint=${endpoint}\nstate=${state}`);
+        }
+
+        function counters_setHTML(value1, value2) {
+
+        }
+
+        function counters_update() {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", counters_URL, true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    document.getElementById("main_tank").innerText = response.counter_0;
+                    document.getElementById("bowl").innerText = response.counter_1;
+                }
+            };
+            xhr.send();
+        }
+
+        function counters_reset() {
+            xhttp.open("POST", "counters_reset", true);
+            xhttp.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    counters_update();
+                }
+            };
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.body.innerHTML +=  generate_checkbox_group(switches);
+            document.body.innerHTML += "\
+                <hr>\
+                <h3>Counters</h3>\
+                <!-- button class=\"button\" onclick=\"refresh_counters()\">Refresh counters</button -->\
+                <button class=\"button\" onclick=\"counters_reset()\">Reset</button>\
+                <div>\
+                    <p>Main tank counter: <span id=\"main_tank\">0</span> pulses.</p>\
+                    <p>Bowl counter: <span id=\"bowl\">0</span> pulses.</p>\
+                </div>\
+            ";
+            setInterval(counters_update, counters_refresh_period * 1000);
+            counters_update(); // Initial call to update counters immediately
+        });
+
+    </script>
   </head>
   <body>
     <script>
@@ -143,8 +202,6 @@
              ]
             },
         ];
-
-        document.body.innerHTML += generate_checkbox_group(switches);
     </script>
 
   </body>
