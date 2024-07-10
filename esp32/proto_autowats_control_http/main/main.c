@@ -12,24 +12,31 @@
 #include <esp_log.h>
 #include <esp_system.h>
 #include <nvs_flash.h>
+#include <stdint.h>
 #include <sys/param.h>
+#include "driver/pcnt.h"
 #include "nvs_flash.h"
 #include "esp_netif.h"
 #include "esp_eth.h"
 #include "protocol_examples_common.h"
 #include "esp_tls_crypto.h"
+#include <cJSON.h>
 #include <esp_http_server.h>
 #include "MCP23017.h"
+#include "flowcounter.h"
 
 static const char *TAG = "AutoWatS-proto";
+
+pcnt_unit_t counters[2];
 
 mcp23017_t mcp23017 = {
     .i2c_addr = MCP23017_DEFAULT_ADDR + CONFIG_AUTOWATS_I2C_MCP23017_ADDR_OFFSET,
     .port = CONFIG_AUTOWATS_I2C_PORT,
     .sda_pin = CONFIG_AUTOWATS_I2C_SDA_GPIO,
     .scl_pin = CONFIG_AUTOWATS_I2C_SCL_GPIO,
-    .sda_pullup_en = GPIO_PULLUP_ENABLE,
-    .scl_pullup_en = GPIO_PULLUP_ENABLE,
+    /* soldered HW pullups */
+    .sda_pullup_en = GPIO_PULLUP_DISABLE,
+    .scl_pullup_en = GPIO_PULLUP_DISABLE,
 };
 
 typedef struct {
@@ -178,6 +185,61 @@ static const httpd_uri_t uri_endpoint_update = {
     .user_ctx  = NULL
 };
 
+static esp_err_t counters_get_handler(httpd_req_t *req) {
+    // Create a cJSON object
+    cJSON *root = cJSON_CreateObject();
+    if (root == NULL) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    // Add the counter values to the JSON object
+    cJSON_AddNumberToObject(root, "counter_0", flowcounter_get_volume_mL(counters[0]));
+    cJSON_AddNumberToObject(root, "counter_1", flowcounter_get_volume_mL(counters[1]));
+
+    // Convert JSON object to string
+    const char *json_response = cJSON_Print(root);
+    if (json_response == NULL) {
+        cJSON_Delete(root);
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    // Set HTTP response content type to JSON
+    httpd_resp_set_type(req, "application/json");
+
+    // Send the JSON response
+    httpd_resp_sendstr(req, json_response);
+
+    // Free the JSON object and string
+    cJSON_Delete(root);
+    free((void *)json_response);
+
+    return ESP_OK;
+}
+
+static const httpd_uri_t uri_counters = {
+    .uri       = "/counters",
+    .method    = HTTP_GET,
+    .handler   = counters_get_handler,
+    .user_ctx  = NULL
+};
+
+static esp_err_t counters_reset_post_handler(httpd_req_t *req) {
+    flowcounter_stop(counters[0]);
+    flowcounter_stop(counters[1]);
+    httpd_resp_set_type(req, "text/plain");
+    httpd_resp_sendstr(req, "OK");
+
+    return ESP_OK;
+}
+
+static const httpd_uri_t uri_counters_reset = {
+    .uri       = "/counters_reset",
+    .method    = HTTP_POST,
+    .handler   = counters_reset_post_handler,
+    .user_ctx  = NULL
+};
 
 static httpd_handle_t start_webserver(void)
 {
@@ -195,6 +257,8 @@ static httpd_handle_t start_webserver(void)
         httpd_register_uri_handler(server, &uri_index);
         httpd_register_uri_handler(server, &uri_index_html);
         httpd_register_uri_handler(server, &uri_endpoint_update);
+        httpd_register_uri_handler(server, &uri_counters);
+        httpd_register_uri_handler(server, &uri_counters_reset);
         return server;
     }
 
@@ -229,23 +293,35 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
+#define GPIO_COUNTER_1 34
+#define GPIO_COUNTER_2 35
 
 void app_main(void)
 {
     static httpd_handle_t server = NULL;
 
-    // #define EXAMPLE_PCNT_HIGH_LIMIT 100
-    // #define EXAMPLE_PCNT_LOW_LIMIT
-    //
-    // pcnt_unit_config_t unit_config = {
-    //     .high_limit = EXAMPLE_PCNT_HIGH_LIMIT,
-    //     .low_limit = EXAMPLE_PCNT_LOW_LIMIT,
-    // };
-    // pcnt_unit_handle_t pcnt_unit = NULL;
-    // ESP_ERROR_CHECK(pcnt_new_unit(&unit_config, &pcnt_unit));
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    flowcounter_init();
+    counters[0] = flowcounter_alloc(GPIO_COUNTER_1, 20, 1);
+    counters[1] = flowcounter_alloc(GPIO_COUNTER_2, 20, 1);
+    ESP_LOGI(TAG, "counter for GPIO %d => unit %d", GPIO_COUNTER_1, counters[0]);
+    ESP_LOGI(TAG, "counter for GPIO %d => unit %d", GPIO_COUNTER_2, counters[1]);
+    flowcounter_start(counters[0], INT32_MAX, NULL);
+    flowcounter_start(counters[1], INT32_MAX, NULL);
+    /* enable flowcounter supply voltage */
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = GPIO_NUM_32,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE
+    };
+    //configure GPIO with the given settings
+    gpio_config(&io_conf);
+    gpio_set_level(GPIO_NUM_32, 1);
 
     mcp23017_init(&mcp23017);
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.

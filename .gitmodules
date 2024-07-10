@@ -1,3 +1,9 @@
 [submodule "HTTP-server"]
 	path = HTTP-server
 	url = git@github.com:SKZ81/AutoWatS-HTTP-server.git
+[submodule "esp32/proto_autowats_control_http/components/lua"]
+	path = esp32/proto_autowats_control_http/components/lua
+	url = git@github.com:UncleRus/esp-idf-lua.git
+[submodule "esp32/proto_autowats_control_http/components/micropython"]
+	path = esp32/proto_autowats_control_http/external/micropython
+	url = git@github.com:micropython/micropython.git
