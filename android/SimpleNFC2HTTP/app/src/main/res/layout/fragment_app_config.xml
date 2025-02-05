@@ -98,5 +98,32 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/prefixLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="URL Prefix: "
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/prefixEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/portEditText"
+            android:hint="Prefix"
+            android:inputType="textUri"
+            android:imeOptions="actionDone"
+            android:minHeight="48dp"
+            android:singleLine="true" />
+
+    </LinearLayout>
+
 </LinearLayout>
 

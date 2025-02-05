@@ -22,6 +22,7 @@ public class AppConfFragment extends Fragment
 
     private EditText serverEditText;
     private EditText portEditText;
+    private EditText prefixEditText;
     private RadioGroup protocolRadioGroup;
     private Button connectButton;
     private MainActivity mainActivity;
@@ -43,21 +44,24 @@ public class AppConfFragment extends Fragment
 
         serverEditText = view.findViewById(R.id.serverEditText);
         portEditText = view.findViewById(R.id.portEditText);
+        prefixEditText = view.findViewById(R.id.prefixEditText);
         protocolRadioGroup = view.findViewById(R.id.protocolRadioGroup);
         connectButton = view.findViewById(R.id.connectServerButton);
         config = AppConfiguration.instance();
 
         serverEditText.setText(config.serverAddress());
-        portEditText.setText(String.valueOf(config.port()));
         if (config.isHttps()) {
             protocolRadioGroup.check(R.id.httpsRadioButton);
         } else {
             protocolRadioGroup.check(R.id.httpRadioButton);
         }
+        setPortEnabled(config.isHttps());
+        prefixEditText.setText(config.urlPrefix());
 
         // Register listeners to update config object as soon as UI field is modifed
         serverEditText.addTextChangedListener(this);
         portEditText.addTextChangedListener(this);
+        prefixEditText.addTextChangedListener(this);
         protocolRadioGroup.setOnCheckedChangeListener(this);
 
         return view;
@@ -79,12 +83,15 @@ public class AppConfFragment extends Fragment
         } else {
             config.setPort(0);
         }
+        config.setURLPrefix(prefixEditText.getText().toString());
     }
 
     @Override
     public void onCheckedChanged(RadioGroup group, int checkedId) {
         // Save all radio groups into config
-        config.setHttps(checkedId == R.id.httpsRadioButton);
+        boolean isHttps = (checkedId == R.id.httpsRadioButton);
+        config.setHttps(isHttps);
+        setPortEnabled(isHttps);
     }
 
     public void activateConnectButton() {
@@ -102,4 +109,19 @@ public class AppConfFragment extends Fragment
     public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+    private void setPortEnabled(boolean enabled) {
+        if (enabled)  {
+            portEditText.setText("");      // Clear text
+            portEditText.setEnabled(false); // Disable interaction
+            portEditText.setFocusable(false);
+            portEditText.setFocusableInTouchMode(false);
+        } else {
+            if (config.port() != 0)
+                portEditText.setText(String.valueOf(config.port()));
+            portEditText.setEnabled(true); // Enable interaction
+            portEditText.setFocusable(true);
+            portEditText.setFocusableInTouchMode(true);
+        }
+    }
 }

@@ -5,7 +5,6 @@ import android.content.Context;
 
 public class AppConfiguration {
 
-    // public static final String VARIETIES_URL = "/varieties";
     public static final String VARIETIES_URL = "/varieties";
     public static final String VARIETIES_IMG_URL = "/images/varieties/";
     public static final String UPDATE_PLANT_URL = "/plant/update";
@@ -21,15 +20,18 @@ public class AppConfiguration {
     private static final String KEY_HTTPS = "isHttps";
     private static final String KEY_SERVER = "serverAddress";
     private static final String KEY_PORT = "port";
+    private static final String KEY_PREFIX = "urlPrefix";
 
     private boolean isHttps;
     private String serverAddress;
     private int port;
+    private String urlPrefix;
 
     private AppConfiguration() {
         isHttps = sharedPreferences.getBoolean(KEY_HTTPS, false);
         serverAddress = sharedPreferences.getString(KEY_SERVER, "www.example.com");
-        port = sharedPreferences.getInt(KEY_PORT, 80);;
+        port = sharedPreferences.getInt(KEY_PORT, 80);
+        urlPrefix = sharedPreferences.getString(KEY_PREFIX, "");
     }
 
     public static void static_init(MainActivity main) {
@@ -48,6 +50,7 @@ public class AppConfiguration {
         editor.putBoolean(KEY_HTTPS, isHttps);
         editor.putString(KEY_SERVER, serverAddress);
         editor.putInt(KEY_PORT, port);
+        editor.putString(KEY_PREFIX, urlPrefix);
         editor.apply();
     }
 
@@ -75,7 +78,18 @@ public class AppConfiguration {
         this.port = port;
     }
 
+    public String urlPrefix() {
+        return this.urlPrefix;
+    }
+
+    public void setURLPrefix(String urlPrefix) {
+        this.urlPrefix = urlPrefix;
+    }
+
     public String getServerURL() {
-        return (isHttps ? "https://" : "http://") + serverAddress + ":" + port;
+        return (isHttps ? "https://" : "http://") +
+                serverAddress +
+                (!isHttps && port != 0 ? ":" + port : "") +
+                (urlPrefix != "" ? "/"+urlPrefix : "");
     }
 }
