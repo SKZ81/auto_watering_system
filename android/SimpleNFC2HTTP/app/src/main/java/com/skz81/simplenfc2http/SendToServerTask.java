@@ -1,6 +1,5 @@
 package com.skz81.simplenfc2http;
 
-import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.NonNull;
 
@@ -27,8 +26,7 @@ public class SendToServerTask {
     private boolean error = false;
     private boolean cancelled = false;
     private boolean done = false;
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private ConnectionStateWatcher connectionWatcher = null;
+    private static ConnectionStateWatcher connectionWatcher = null;
 
     public interface ReplyListener {
         default String decodeServerResponse(InputStream input) {
@@ -62,7 +60,7 @@ public class SendToServerTask {
         public void onServerConnectionError(String error);
     }
 
-    public void setConnectionWatcher(ConnectionStateWatcher watcher) {
+    static public void setConnectionWatcher(ConnectionStateWatcher watcher) {
         connectionWatcher = watcher;
     }
 
@@ -138,23 +136,18 @@ public class SendToServerTask {
             @Override
             public void run() {
                 try {
-                    handler.post(new Runnable() {
                     final String result = (!cancelled && !error) ? future.get() : null;
-                        @Override
-                        public void run() {
-                            done = true;
-                            if (result != null) {
-                                replyListener.onReplyFromServer(result);
-                                if (connectionWatcher != null) {
-                                    connectionWatcher.onServerConnectionOk();
-                                }
-                            } else if (cancelled) {
-                                replyListener.onError("Sever task cancelled.");
-                            } else if (!error) {
-                                replyListener.onError("Got no answer to precess (null) but HTTP task not cancelled nor errored");
-                            }
+                    done = true;
+                    if (result != null) {
+                        replyListener.onReplyFromServer(result);
+                        if (connectionWatcher != null) {
+                            connectionWatcher.onServerConnectionOk();
                         }
-                    });
+                    } else if (cancelled) {
+                        replyListener.onError("Sever task cancelled.");
+                    } else if (!error) {
+                        replyListener.onError("Got no answer to precess (null) but HTTP task not cancelled nor errored");
+                    }
                 } catch (Exception e) {
                     error = true;
                     done = true;
@@ -166,6 +159,9 @@ public class SendToServerTask {
                     for(StackTraceElement elem : stackTrace) {
                         message.append("\n");
                         message.append(elem.toString());
+                    }
+                    if (connectionWatcher != null) {
+                        connectionWatcher.onServerConnectionError(message.toString());
                     }
                     replyListener.onError(message.toString());
                 }
@@ -195,7 +191,7 @@ public class SendToServerTask {
 
         try {
             URL url;
-            if (params[0].equals("GET")) {
+            if (params[0].equals("GET") && params[2] != null) {
                 url = new URL(params[1] + params[2]);
             } else {
                 url = new URL(params[1]);

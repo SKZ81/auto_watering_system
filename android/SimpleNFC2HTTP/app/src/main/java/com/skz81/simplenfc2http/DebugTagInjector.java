@@ -45,15 +45,16 @@ public class DebugTagInjector {
                     JSONArray uuid_list = new JSONArray(data);
                     JSONInfoAdapter jsonAdapter = new JSONInfoAdapter();
 
-                    jsonAdapter.addAttributeRegex(
-                            "list\\[\\d+\\]\\.UUID", String.class,
-                            value -> uuids.add((String) value),
-                            () -> {});
+                    jsonAdapter.addRegexAttribute(
+                            "list\\[\\d+\\]\\.UUID",
+                            JSONInfoAdapter.AttributeAdapter.setterOnly(
+                                String.class,
+                                value -> uuids.add((String) value)));
+
                     jsonAdapter.parseJSONArray("list", uuid_list);
                     Log.i(TAG, "uuid list:" + uuids);
 
-                    displayUUIDsDialog();
-
+                    mainActivity.runOnUiThread(() -> displayUUIDsDialog() );
                 } catch (JSONException e) {
                     onError("Error parsing JSON plant info: " + e.getMessage());
                 }

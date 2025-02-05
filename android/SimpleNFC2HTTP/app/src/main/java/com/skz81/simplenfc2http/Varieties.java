@@ -1,8 +1,10 @@
 package com.skz81.simplenfc2http;
 
+import android.content.Context;
 import android.util.Base64;
 import android.util.Log;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -12,6 +14,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.Timestamp;
 
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -19,6 +22,15 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
+import androidx.room.Entity;
+import androidx.room.Dao;
+import androidx.room.Database;
+import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
+import androidx.room.PrimaryKey;
+import androidx.room.Query;
+// import androidx.room.Room;
+// import androidx.room.RoomDatabase;
 
 import com.skz81.simplenfc2http.AppConfiguration;
 import com.skz81.simplenfc2http.MainActivity;
@@ -34,12 +46,15 @@ public class Varieties extends ViewModel
         public void onVarietiesUpdated(Varieties updated);
     }
 
-    public class Variety {
+    // Define the Room Entity for Variety
+    @Entity(tableName = "varieties")
+    public static class Variety {
+        @PrimaryKey
         private int id;
         private String name;
         private String shortDescription;
         private String photoUrl;
-        private String image_base64; // TODO : have directly a Bitmap here
+        private String imageBase64; // TODO : have directly byte[] here ??
         private int bloomingTimeDays;
 
         public Variety(int id, String name, String shortDescription, String photoUrl, int bloomingTimeDays) {
@@ -50,52 +65,40 @@ public class Varieties extends ViewModel
             this.bloomingTimeDays = bloomingTimeDays;
         }
 
-        public int id() {return id;}
-        public String name() {return name;}
-        public String shortDescription() {return shortDescription;}
-        public String photoUrl() {return photoUrl;}
-        public String imageBase64() {return image_base64;}
-        public int bloomingTimeDays() {return bloomingTimeDays;}
-    }
+        public int getId() {return id;}
+        public String getName() {return name;}
+        public String getShortDescription() {return shortDescription;}
+        public String getPhotoUrl() {return photoUrl;}
+        public String getImageBase64() {return imageBase64;}
+        public int getBloomingTimeDays() {return bloomingTimeDays;}
 
-    private static Varieties instance;
-    public static Varieties instance() { return instance; }
-    public static Varieties instance(MainActivity mainActivity) {
-        if (instance == null) {
-            AppConfiguration config = AppConfiguration.instance();
-            instance = new Varieties(mainActivity,
-                                      config.getServerURL(),
-                                      config.VARIETIES_URL,
-                                      config.VARIETIES_IMG_URL);
-        } else {
-            // simulate cnx ok
-            //TBD : we should check the timestamp each time instead !
-            // Also, should separate "varieties update" and "serverConnectionOK" signals
-            mainActivity.onServerConnectionOk();
+        public void setImageBase64(String imageBase64) {
+            this.imageBase64 = imageBase64;
         }
-        return instance;
     }
 
     private MainActivity mainActivity;
+    private LocalDatabase database;
+    private LiveData<List<Variety>> view;
     private List<Variety> varieties;
-    private String server;
-    private String imagesURLPrefix;
+    private AppConfiguration config;
 
-    private Varieties(MainActivity parent, String server,
-                     String varietiesURL, String imagesURLPrefix) {
-        this.mainActivity = parent;
-        this.varieties = new ArrayList<>();
-        this.server = server;
-        this.imagesURLPrefix = imagesURLPrefix;
-        SendToServerTask serverTask = new SendToServerTask(this);
-        serverTask.setConnectionWatcher(mainActivity);
-        serverTask.GET(server + varietiesURL, null);
+    public Varieties(MainActivity mainActivity) {
+        this.config = AppConfiguration.instance();
+        this.mainActivity = mainActivity;
+        this.database = LocalDatabase.getInstance(mainActivity);
+        this.view = database.varietiesDao().getVarietiesLive();
+    }
+
+    public void updateFromServer(long lastUpdate) {
+        new SendToServerTask(this).GET(config.getServerURL() + config.VARIETIES_URL, null);
     }
 
     @Override
     public void onReplyFromServer(String data) {
         if (data == null) return; // filter error case (should not happend)
 
+        List<Variety> updatedVarieties = new ArrayList<>();
         try {
             Log.d(TAG, "Got JSON:\n" + data);
             JSONArray jsonArray = new JSONArray(data);
@@ -107,34 +110,37 @@ public class Varieties extends ViewModel
                 String photoUrl = jsonObject.getString("photo_url");
                 int bloomingTimeDays = jsonObject.getInt("blooming_time_days");
                 Variety variety = new Variety(id, name, shortDescription, photoUrl, bloomingTimeDays);
-                varieties.add(variety);
-                fetchVarietyImage(variety, server + imagesURLPrefix + photoUrl);
+                updatedVarieties.add(variety);
+                fetchVarietyImage(variety, config.getServerURL() + config.VARIETIES_IMG_URL + photoUrl);
             }
-            // notify "Update Tab" Spinner (and any other client) of varieties update
-            notifySharedViewUpdate(this);
         } catch (JSONException e) {
             mainActivity.displayError(TAG, "Error parsing varieties JSON data: " + e.getMessage());
-            notifySharedViewUpdate(null);
         }
+        this.varieties = updatedVarieties;
+        database.varietiesDao().insertVarieties(updatedVarieties);
+        // database.varietiesDao().insertLastUpdate("varieties", )
     }
 
     @Override
     public void onError(String error) {
         mainActivity.displayError(TAG, "Can't fetch varieties: " + error);
-        notifySharedViewUpdate(null);
+        // notifySharedViewUpdate(null);
     }
 
-    public List<Variety> getAll() {
-        return varieties;
+    // ublic List<Variety> getAll() {
+    //    return view.getValue();
+    //}
+    public LiveData<List<Variety>> getSharedView() {
+        return view;
     }
 
     public Variety getById(int id) {
-        for (Variety variety : varieties) {
-            if (variety.id() == id) {
+        for(Variety variety: this.varieties) {
+            if (variety.id == id) {
                 return variety;
             }
         }
-        return null; // Variety not found
+        return null;
     }
 
     public String getNameById(int id, String defaultVal) {
@@ -145,7 +151,7 @@ public class Varieties extends ViewModel
     public String getImageById(int id) {
         Variety variety = getById(id);
         // TODO: default image if not found ?
-        return variety == null ? "" : variety.image_base64;
+        return variety == null ? "" : variety.imageBase64;
     }
 
 
@@ -173,7 +179,8 @@ public class Varieties extends ViewModel
             @Override
             public void onReplyFromServer(String data) {
                 Log.d(TAG, "Got BASE64 image: " + data.substring(0,63) + "...");
-                variety.image_base64 = data;
+                variety.imageBase64 = data;
+                database.varietiesDao().insertVariety(variety);
             }
             @Override
             public void onError(String error) {
@@ -182,29 +189,51 @@ public class Varieties extends ViewModel
         }).GET(image_url, null);
     }
 
-    private MutableLiveData<Varieties> sharedVarieties = new MutableLiveData<>();
+    // private MutableLiveData<Varieties> sharedVarieties = new MutableLiveData<>();
+    // public LiveData<Varieties> sharedView() {
+    //     return sharedVarieties;
+    // }
 
-    public LiveData<Varieties> sharedView() {
-        return sharedVarieties;
+    // public void observe(UpdateListener client) {
+    //     sharedVarieties.observeForever(new Observer<Varieties>() {
+    //         @Override
+    //         public void onChanged(@Nullable Varieties updated) {
+    //             Log.i(TAG, "NOTIFY update varieties to " + client);
+    //             client.onVarietiesUpdated(updated);
+    //         }
+    //     });
+    // }
+    //
+    // protected void notifySharedViewUpdate(Varieties updated) {
+    //     Handler mainHandler = new Handler(Looper.getMainLooper());
+    //     mainHandler.post(new Runnable() {
+    //         @Override
+    //         public void run() {
+    //             sharedVarieties.setValue(updated);
+    //         }
+    //     });
+    // }
+
+    // Define the Room DAO for Variety
+    @Dao
+    public interface VarietiesDao {
+        @Query("SELECT * FROM varieties")
+        LiveData<List<Variety>> getVarietiesLive();
+
+        @Query("SELECT * FROM varieties")
+        List<Variety> getVarieties();
+
+        @Query("SELECT * FROM varieties WHERE id = :varietyId")
+        LiveData<Variety> getVarietyLiveById(int varietyId);
+
+        @Query("SELECT * FROM varieties WHERE id = :varietyId")
+        Variety getVarietyById(int varietyId);
+
+        @Insert(onConflict = OnConflictStrategy.REPLACE)
+        void insertVarieties(List<Variety> varieties);
+
+        @Insert(onConflict = OnConflictStrategy.REPLACE)
+        void insertVariety(Variety variety);
     }
 
-    public void observe(UpdateListener client) {
-        sharedVarieties.observeForever(new Observer<Varieties>() {
-            @Override
-            public void onChanged(@Nullable Varieties varieties) {
-                Log.i(TAG, "NOTIFY update varieties to " + client);
-                client.onVarietiesUpdated(varieties);
-            }
-        });
-    }
-
-    protected void notifySharedViewUpdate(Varieties updated) {
-        Handler mainHandler = new Handler(Looper.getMainLooper());
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                sharedVarieties.setValue(updated);
-            }
-        });
-    }
 }

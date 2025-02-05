@@ -56,14 +56,15 @@ public class MainActivity extends FragmentActivity
     // for debug purpose, tag injection needs to know if scanning is enabled
     private boolean scanning = false;
 
+    private LocalDatabase database;
+
     public String appName() {return appName;}
     public Varieties varieties() {return varieties;}
 
     public void displayError(String tag, String message) {
-        MainActivity mainActivity = this;
         Log.e(tag, message);
         runOnUiThread(() -> {
-            AlertDialog.Builder builder = new AlertDialog.Builder(mainActivity);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle(tag +" Error")
             .setMessage(message)
             .setNegativeButton("Dismiss", new DialogInterface.OnClickListener() {
@@ -76,10 +77,9 @@ public class MainActivity extends FragmentActivity
     }
 
     public void toastDisplay(String tag, String message, boolean longDuration) {
-        MainActivity mainActivity = this;
         runOnUiThread(() -> {
             Log.e(tag, message);
-            Toast.makeText(mainActivity, message,
+            Toast.makeText(this, message,
                            longDuration ?
                                 Toast.LENGTH_SHORT :
                                 Toast.LENGTH_LONG
@@ -89,6 +89,7 @@ public class MainActivity extends FragmentActivity
 
     @Override
     public void onServerConnectionOk() {
+        Log.i(TAG, "Connection to server OK : hide loading dialog.");
         hideLoadingDialog();
         viewPagerAdapter.showPage(scanTab);
         viewPagerAdapter.showPage(updateTab);
@@ -98,6 +99,7 @@ public class MainActivity extends FragmentActivity
 
     @Override
     public void onServerConnectionError(String error) {
+        Log.e(TAG, "Connection to server error : hide loading dialog.");
         hideLoadingDialog();
         toastDisplay(TAG, error + "\nPlease check config.", true);
         runOnUiThread(() -> configTab.activateConnectButton());
@@ -159,12 +161,9 @@ public class MainActivity extends FragmentActivity
     }
 
     private void hideLoadingDialog() {
-        Log.i(TAG, "hide dialog.");
         if(progressDialog != null){
             progressDialog.dismiss();
             progressDialog = null;
-        } else {
-            Log.i(TAG, "Dialog was null!");
         }
     }
 
@@ -175,6 +174,7 @@ public class MainActivity extends FragmentActivity
         setContentView(R.layout.activity_main);
         AppConfiguration.static_init(this);
         scanTagListener = new FetchPlantInfo(this);
+        varieties = new Varieties(this);
 
         viewPager = findViewById(R.id.viewPager);
         TabLayout tabLayout = findViewById(R.id.tabLayout);
@@ -186,6 +186,9 @@ public class MainActivity extends FragmentActivity
                     tab.setText(viewPagerAdapter.getPageTitle(position));
                 }
         ).attach();
+
+        database = LocalDatabase.getInstance(this);
+        database.ensureTableNamesExist();
 
         try {
             PackageManager packageManager = this.getPackageManager();
@@ -209,12 +212,13 @@ public class MainActivity extends FragmentActivity
             Toast.makeText(this, "Please enable NFC", Toast.LENGTH_LONG).show();
             Log.w(TAG, "NFC Disabled !..");
         }
+        SendToServerTask.setConnectionWatcher(this);
         connectServer();
     }
 
     public void connectServer() {
         showLoadingDialog();
-        varieties = Varieties.instance(this);
+        varieties.updateFromServer(0);
     }
 
     private void setupViewPager(ViewPager2 viewPager) {

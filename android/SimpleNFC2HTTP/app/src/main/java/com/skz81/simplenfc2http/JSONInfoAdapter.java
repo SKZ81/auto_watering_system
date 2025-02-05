@@ -16,12 +16,13 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.Observer;
 
 public class JSONInfoAdapter {
-    private Map<Pattern, AttributeInfo> attributeMap = new HashMap<>();
+    private Map<Pattern, AttributeAdapter> attributeMap = new HashMap<>();
 
-    public JSONInfoAdapter(Fragment parent, LiveData<JSONObject> info) {
+    public JSONInfoAdapter(LifecycleOwner parent, LiveData<JSONObject> info) {
         info.observe(parent, new Observer<JSONObject>() {
             @Override
             public void onChanged(@Nullable JSONObject json) {
@@ -39,23 +40,17 @@ public class JSONInfoAdapter {
 
     public JSONInfoAdapter() {}
 
-    public void addAttribute(String path, Class<?> expectedType,
-                             AttributeInfo.SetterCallback set,
-                             AttributeInfo.CleanerCallback clear) {
-        attributeMap.put(Pattern.compile(Pattern.quote(path)), new AttributeInfo(expectedType, set, clear));
+    public void addAttribute(String path, AttributeAdapter attribute) {
+        attributeMap.put(Pattern.compile(Pattern.quote(path)), attribute);
     }
 
-    public void addAttributeRegex(String pathRegex, Class<?> expectedType,
-                             AttributeInfo.SetterCallback set,
-                             AttributeInfo.CleanerCallback clear) {
-        attributeMap.put(Pattern.compile(pathRegex), new AttributeInfo(expectedType, set, clear));
+    public void addRegexAttribute(String pathRegex, AttributeAdapter attribute) {
+        attributeMap.put(Pattern.compile(pathRegex), attribute);
     }
 
     public void clear() {
         attributeMap.forEach((k,v) -> v.cleaner.execute());
     }
-
-
 
     public void parseJSON(String path, JSONObject jsonObject) throws JSONException {
         for(Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
@@ -91,33 +86,63 @@ public class JSONInfoAdapter {
     }
 
     private void setAttribute(String path, String type, Object value) {
+        // TODO: no need to have a Map<> under the hood if we only iterate
         attributeMap.forEach((pattern, attributeInfo) -> {
-            if(pattern.matcher(path).find()) {
-                if (attributeInfo != null && attributeInfo.expectedType.equals(type)) {
+            boolean result = pattern.matcher(path).matches();
+            if(result) {
+                boolean checkPassed = attributeInfo.checker.execute(path, value);
+                if (attributeInfo != null &&
+                    attributeInfo.expectedType.equals(type) &&
+                    checkPassed) {
                     attributeInfo.setter.execute(value);
                 }
             }
         });
-        AttributeInfo attributeInfo = attributeMap.get(path);
     }
 
 
-    private static class AttributeInfo {
-        public interface SetterCallback {
+    public static class AttributeAdapter {
+        public interface Checker {
+            boolean execute(String path, Object value);
+        }
+        public interface Setter {
             void execute(Object value);
         }
-        public interface CleanerCallback {
+        public interface Cleaner {
             void execute();
         }
+        private Setter setter;
+        private Cleaner cleaner;
+        private Checker checker;
         private String expectedType;
-        private SetterCallback setter;
-        private CleanerCallback cleaner;
 
-        public AttributeInfo(Class<?> expectedType, SetterCallback setter,
-                                                    CleanerCallback cleaner) {
+        private AttributeAdapter(Class<?> expectedType,
+                                 Setter setter,
+                                 Cleaner cleaner,
+                                 Checker checker) {
             this.expectedType = expectedType.getSimpleName();
             this.setter = setter;
             this.cleaner = cleaner;
+            this.checker = checker;
+        }
+
+        public static AttributeAdapter setterOnly(
+                                        Class<?> expectedType,
+                                        Setter setter) {
+            return new AttributeAdapter(expectedType, setter, () -> {}, (p, v) -> true);
+        }
+        public static AttributeAdapter setterCleaner(
+                                        Class<?> expectedType,
+                                        Setter setter,
+                                        Cleaner cleaner) {
+            return new AttributeAdapter(expectedType, setter, cleaner, (p, v) -> true);
+        }
+        public static AttributeAdapter setterCleanerCheck(
+                                        Class<?> expectedType,
+                                        Setter setter,
+                                        Cleaner cleaner,
+                                        Checker checker) {
+            return new AttributeAdapter(expectedType, setter, cleaner, checker);
         }
     }
 }

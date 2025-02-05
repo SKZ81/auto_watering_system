@@ -46,7 +46,7 @@ import org.json.JSONObject;
 
 
 public class UpdateFragment extends Fragment
-                              implements Varieties.UpdateListener {
+                              /*implements Varieties.UpdateListener*/ {
 
     private static final String TAG = "AutoWatS-NFC-update";
 
@@ -68,9 +68,13 @@ public class UpdateFragment extends Fragment
     private MainActivity mainActivity;
     private Calendar calendar;
 
+    private LocalDatabase database;
     private JSONInfoAdapter plantInfoAdapter;
 
     private List<VarietyItem> varieties = null;
+    // save selected varietyId. If varieties are updated, this info is used to retrigger
+    // item selection in varietySpinner
+    private int spinnerVarietyId = -1;
 
     public UpdateFragment() {}
 
@@ -144,44 +148,66 @@ public class UpdateFragment extends Fragment
             }
         });
 
-        Varieties varieties = Varieties.instance();
-        varieties.observe(this);
+        database = LocalDatabase.getInstance(mainActivity);
+        database.varietiesDao().getVarietiesLive().observe(this, new Observer<List<Varieties.Variety>>() {
+            @Override
+            public void onChanged(List<Varieties.Variety> varieties) {
+                List<VarietyItem> varietyItems = varieties.stream().map(
+                    variety -> new VarietyItem(variety.getName(), variety.getId())
+                ).collect(Collectors.toCollection(ArrayList::new));
+                // Prepend a "placeholder item" with a special ID
+                varietyItems.add(0, new VarietyItem("", -1));
+                updateSpinnerItems(varietyItems);
+                // redo spinner item selection
+                setVarietySpinner(spinnerVarietyId);
+            }
+        });
 
 
         plantInfoAdapter = new JSONInfoAdapter(this, FetchPlantInfo.sharedJSONView());
 
-        plantInfoAdapter.addAttribute("UUID", String.class,
-                                      value -> plantId.setText((String) value),
-                                      () -> plantId.getText().clear());
-        plantInfoAdapter.addAttribute("variety", Integer.class,
-                                      value -> setVarietySpinner((Integer) value),
-                                      () -> varietySpinner.setSelection(0));
-        plantInfoAdapter.addAttribute("sex", Integer.class,
-                                      value -> setGenderField((Integer) value),
-                                      () -> genderRadioGroup.clearCheck());
-        plantInfoAdapter.addAttribute("germination_date", String.class,
-                                      value -> germinationDateEdit.setText((String) value),
-                                      () -> germinationDateEdit.getText().clear());
-        plantInfoAdapter.addAttribute("blooming_date", String.class,
-                                      value -> bloomingDateEdit.setText((String) value),
-                                      () -> bloomingDateEdit.getText().clear());
-        plantInfoAdapter.addAttribute("yielding_date", String.class,
-                                      value -> yieldingDateEdit.setText((String) value),
-                                      () -> yieldingDateEdit.getText().clear());
+        plantInfoAdapter.addAttribute("UUID", JSONInfoAdapter.AttributeAdapter.setterCleaner(
+                                        String.class,
+                                        value -> plantId.setText((String) value),
+                                        () -> plantId.getText().clear()));
+        plantInfoAdapter.addAttribute("variety", JSONInfoAdapter.AttributeAdapter.setterCleaner(
+                                        Integer.class,
+                                        value -> setVarietySpinner((Integer) value),
+                                        () -> varietySpinner.setSelection(0)));
+        plantInfoAdapter.addAttribute("sex", JSONInfoAdapter.AttributeAdapter.setterCleaner(
+                                        Integer.class,
+                                        value -> setGenderField((Integer) value),
+                                        () -> genderRadioGroup.clearCheck()));
+        plantInfoAdapter.addAttribute("germination_date", JSONInfoAdapter.AttributeAdapter.setterCleaner(
+                                        String.class,
+                                        value -> germinationDateEdit.setText((String) value),
+                                        () -> germinationDateEdit.getText().clear()));
+        plantInfoAdapter.addAttribute("blooming_date", JSONInfoAdapter.AttributeAdapter.setterCleaner(
+                                        String.class,
+                                        value -> bloomingDateEdit.setText((String) value),
+                                        () -> bloomingDateEdit.getText().clear()));
+        plantInfoAdapter.addAttribute("yielding_date",JSONInfoAdapter.AttributeAdapter.setterCleaner(
+                                        String.class,
+                                        value -> yieldingDateEdit.setText((String) value),
+                                        () -> yieldingDateEdit.getText().clear()));
 
         return view;
     }
 
     private void setVarietySpinner(int varietyId) {
-        Varieties.Variety variety = Varieties.instance().getById(varietyId);
+        spinnerVarietyId = varietyId;
         SpinnerAdapter spinnerAdapter = varietySpinner.getAdapter();
+        if (spinnerAdapter == null) return;
+
         for (int i = 0; i < spinnerAdapter.getCount(); i++) {
             VarietyItem item = (VarietyItem)spinnerAdapter.getItem(i);
-            if (item.id() == variety.id()) {
+            if (item.id() == varietyId) {
                 varietySpinner.setSelection(i);
-                break; // Exit the loop once the item is found
+                return; // Exit the loop once the item is found
             }
         }
+        // if not found, select "placeholder" (first item)
+        varietySpinner.setSelection(0);
     }
 
     private void setGenderField(int index) {
@@ -193,21 +219,21 @@ public class UpdateFragment extends Fragment
         }
     }
 
-    @Override
-    public void onVarietiesUpdated(Varieties update) {
-        if (update == null) {
-            varieties = new ArrayList<>();
-            Log.i(TAG, "onVarietiesUpdated: None");
-        } else {
-            varieties = update.getAll().stream().map(
-                variety -> new VarietyItem(variety.name(), variety.id())
-            ).collect(Collectors.toCollection(ArrayList::new));
-            Log.i(TAG, "onVarietiesUpdated: " + varieties);
-        }
-        updateSpinnor();
-    }
+    // @Override
+    // public void onVarietiesUpdated(Varieties update) {
+    //     if (update == null) {
+    //         varieties = new ArrayList<>();
+    //         Log.i(TAG, "onVarietiesUpdated: None");
+    //     } else {
+    //         varieties = update.getAll().stream().map(
+    //             variety -> new VarietyItem(variety.name(), variety.id())
+    //         ).collect(Collectors.toCollection(ArrayList::new));
+    //         Log.i(TAG, "onVarietiesUpdated: " + varieties);
+    //     }
+    //     updateSpinnerItems();
+    // }
 
-    private void updateSpinnor() {
+    private void updateSpinnerItems(List<VarietyItem> varieties) {
         if (varieties == null || varietySpinner == null) return;
 
         ArrayAdapter<VarietyItem> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, varieties);
