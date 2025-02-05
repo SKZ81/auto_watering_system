@@ -43,6 +43,7 @@ public class MainActivity extends FragmentActivity
     private AppConfFragment configTab;
     private ViewPagerAdapter viewPagerAdapter;
     private AlertDialog progressDialog;
+    private ConnectionManager connectionManager;
     private ViewPager2 viewPager;
 
     private NfcAdapter mNfcAdapter;
@@ -212,13 +213,12 @@ public class MainActivity extends FragmentActivity
             Toast.makeText(this, "Please enable NFC", Toast.LENGTH_LONG).show();
             Log.w(TAG, "NFC Disabled !..");
         }
-        SendToServerTask.setConnectionWatcher(this);
-        connectServer();
+        connectionManager = new ConnectionManager(this);
+        connectionManager.startServerPing(15000/*ms*/);
     }
 
     public void connectServer() {
         showLoadingDialog();
-        varieties.updateFromServer(0);
     }
 
     private void setupViewPager(ViewPager2 viewPager) {

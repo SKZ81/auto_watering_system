@@ -5,6 +5,7 @@ import android.content.Context;
 
 public class AppConfiguration {
 
+    public static final String TIMESTAMPS_URL = "/timestamps";
     public static final String VARIETIES_URL = "/varieties";
     public static final String VARIETIES_IMG_URL = "/images/varieties/";
     public static final String UPDATE_PLANT_URL = "/plant/update";
