@@ -7,3 +7,12 @@
 [submodule "esp32/proto_autowats_control_http/components/micropython"]
 	path = esp32/proto_autowats_control_http/external/micropython
 	url = git@github.com:micropython/micropython.git
+[submodule "avr/libs/avr-i2c-slave"]
+	path = avr/libs/avr-i2c-slave
+	url = git@github.com:SKZ81/avr-i2c-slave.git
+[submodule "avr/libs/HX711"]
+	path = avr/libs/HX711
+	url = git@github.com:SKZ81/HX711.git
+[submodule "avr/libs/avr_uart"]
+        path = avr/libs/avr_uart
+        url = git@github.com:SKZ81/avr_uart.git
