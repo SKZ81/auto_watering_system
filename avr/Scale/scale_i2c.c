@@ -80,7 +80,9 @@ command_t *get_command(uint8_t command_code) {
 
 
 void i2c_scale_init() {
-    i2c_slave_setCallbacks(i2c_scale_receive, i2c_scale_requested);
+    i2c_slave_setCallbacks(NULL,
+                           i2c_scale_receive,
+                           i2c_scale_requested);
     i2c_slave_init(SCALE_I2C_ADDRESS);
     reset_state();
 }
