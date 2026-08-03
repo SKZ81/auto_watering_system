@@ -1,0 +1,6 @@
+build-*/
+venv/
+.pio/
+test/build-*/
+test/venv
+test/.pio
