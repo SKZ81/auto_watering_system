@@ -74,8 +74,12 @@ void setup(void) {
     Serial.println("I2C master, for testing scale");
     Serial.setTimeout(5000);
     Serial.println("DBG : after setTimeout()");
-    Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
+    Wire.begin(I2C_PINS);
+
+#if defined(ARDUINO_ARCH_ESP8266)
+    // useless on Arduino Uno/Nano, unavaible on esp32, but necessary for esp82266
     Wire.setClockStretchLimit(400000);
+#endif
     Serial.println("DBG : after Wire.begin()");
 }
 

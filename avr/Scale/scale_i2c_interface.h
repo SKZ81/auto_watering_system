@@ -6,7 +6,7 @@
 
 
 // Address
-#define SCALE_I2C_ADDRESS 23
+#define SCALE_I2C_ADDRESS 0x17
 
 // ===========   WRITE commands (no return)  ==================
 
