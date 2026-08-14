@@ -1,18 +1,13 @@
 #include "avr_uart.h"
 #include "avr_timer.h"
 
- Arduino pin 2 -> HX711 CLK
- 3 -> DOUT
- 5V -> VCC
- GND -> GND
- 
- Most any pin on the Arduino Uno will be compatible with DOUT/CLK.
- 
- The HX711 board can be powered from 2.7V to 5V so the Arduino 5V power should be fine.
- 
-*/
+#include "scale_i2c_interface.h"
+#include "I2CSlave_state_machine.h"
+#include "i2c_callbacks.h"
 
 #include "debug.h"
+
+#include <avr/interrupt.h>
 #include <avr/cpufunc.h>
 #include <stdint.h>
 #include <util/delay.h>
@@ -20,6 +15,20 @@
   #include "HX711.h"
 #endif
 
+i2c_slaveSM_command_t commands[] = {
+    {SCALE_I2C_POWER_DOWN,         0,             scale_i2c_power_down},
+    {SCALE_I2C_POWER_UP,           0,             scale_i2c_power_up},
+    {SCALE_I2C_TARE,               1,             scale_i2c_tare},
+    {SCALE_I2C_SET_ZERO_OFFSET,    3,             scale_i2c_set_zero_offset},
+    {SCALE_I2C_SET_CALIBRATION,    sizeof(float), scale_i2c_set_calibration},
+    {SCALE_I2C_SET_ASYNC_NB_READS, 1,             scale_i2c_set_async_nb_reads},
+    {SCALE_I2C_SET_ASYNC_PERIOD,   1,             scale_i2c_set_async_period},
+    {SCALE_I2C_GET_ZERO_OFFSET,    0,             scale_i2c_get_zero_offset},
+    {SCALE_I2C_READ,               1,             scale_i2c_read},
+    {SCALE_I2C_GET_VALUE,          1,             scale_i2c_get_value},
+    {SCALE_I2C_GET_CALIBRATION,    0,             scale_i2c_get_calibration},
+    {SCALE_I2C_GET_ASYNC_VALUE,    0,             scale_i2c_get_async_value},
+};
 
 
 static uint8_t i2c_buffer[SCALE_I2C_BUFFER_SIZE]={0};
@@ -38,7 +47,9 @@ void init(void) {
     avr_uart_init();
     stdout = &avr_uart_output;
     stdin  = &avr_uart_input_echo;
-    i2c_scale_init();
+    i2c_slaveSM_init(SCALE_I2C_ADDRESS,
+                     commands, sizeof(commands)/sizeof(i2c_slaveSM_command_t),
+                     i2c_buffer, SCALE_I2C_BUFFER_SIZE);
 #ifndef STUB_HX711
     HX711_init(128);
     HX711_set_scale(SCALE_I2C_DEFAULT_CALIBRATION);

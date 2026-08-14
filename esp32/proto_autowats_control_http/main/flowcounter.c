@@ -34,32 +34,43 @@ static flowcounter_handle_t* allocated[PCNT_UNIT_MAX];
  * and pass this information together with the event type
  * the main program using a queue.
  */
-static void IRAM_ATTR flowcounter_intr_handler(void *arg)
+// static void IRAM_ATTR flowcounter_intr_handler(void *arg)
+// {
+//     pcnt_evt_t evt;
+//
+//     // Iterate over all PCNT units
+//     for (int i = 0; i < PCNT_UNIT_MAX; i++) {
+//         // Get interrupt status for the PCNT unit
+//         uint32_t intr_status = PCNT.int_st.val;
+//         if (intr_status & (BIT(i))) {
+//             uint32_t status = PCNT.status_unit[i].val;
+//             PCNT.int_clr.val = BIT(i);  // Clear the interrupt
+//
+//             if (status & PCNT_EVT_H_LIM) {
+//                 // Populate event information
+//                 evt.unit = i;
+//                 evt.status = status;
+//
+//                 // Send event to the queue
+//                 xQueueSendFromISR(event_queue, &evt, NULL);
+//             }
+//         }
+//     }
+// }
+
+static bool flowcounter_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx)
 {
-    pcnt_evt_t evt;
-
-    // Iterate over all PCNT units
-    for (int i = 0; i < PCNT_UNIT_MAX; i++) {
-        // Get interrupt status for the PCNT unit
-        uint32_t intr_status = PCNT.int_st.val;
-        if (intr_status & (BIT(i))) {
-            uint32_t status = PCNT.status_unit[i].val;
-            PCNT.int_clr.val = BIT(i);  // Clear the interrupt
-
-            if (status & PCNT_EVT_H_LIM) {
-                // Populate event information
-                evt.unit = i;
-                evt.status = status;
-
-                // Send event to the queue
-                xQueueSendFromISR(event_queue, &evt, NULL);
-            }
-        }
-    }
+    BaseType_t high_task_wakeup;
+    QueueHandle_t queue = (QueueHandle_t)user_ctx;
+    // send watch point to queue, from this interrupt callback
+    xQueueSendFromISR(queue, &(edata->watch_point_value), &high_task_wakeup);
+    // return whether a high priority task has been waken up by this function
+    return (high_task_wakeup == pdTRUE);
 }
 
-pcnt_unit_t flowcounter_alloc(int gpio, unsigned int rate_uL, unsigned int resolution) {
-    int id = 0;
+
+pcnt_unit_handle_t flowcounter_alloc(int gpio, unsigned int rate_uL, unsigned int resolution) {
+    pcnt_unit_handle_t id = 0;
     while(id < PCNT_UNIT_MAX && allocated[id]) id++;
     if (id == PCNT_UNIT_MAX)
         return -1;
@@ -104,7 +115,7 @@ pcnt_unit_t flowcounter_alloc(int gpio, unsigned int rate_uL, unsigned int resol
 
     return id;
 }
-void flowcounter_free(pcnt_unit_t id) {
+void flowcounter_free(pcnt_unit_handle_t id) {
     if (!allocated[id]) return;
     pcnt_counter_pause(id);
     pcnt_counter_clear(id);
@@ -112,13 +123,13 @@ void flowcounter_free(pcnt_unit_t id) {
     free(allocated[id]);
 }
 
-void flowcounter_stop(pcnt_unit_t id) {
+void flowcounter_stop(pcnt_unit_handle_t id) {
     if (!allocated[id]) return;
     pcnt_counter_pause(id);
     pcnt_counter_clear(id);
 }
 
-void flowcounter_start(pcnt_unit_t id, unsigned int limit_mL,
+void flowcounter_start(pcnt_unit_handle_t id, unsigned int limit_mL,
                        flowcounter_callback_t callback) {
     if (!allocated[id]) return;
     allocated[id]->limit_mL = limit_mL;
@@ -170,9 +181,10 @@ static void pcnt_event_handler_task(void *arg) {
 static TaskHandle_t flowcounter_bgtask_hdl;
 
 void flowcounter_init() {
-    if(user_isr_handle) return;
+    // if(user_isr_handle) return;
+    //
+    // pcnt_isr_register(flowcounter_intr_handler, NULL, 0, &user_isr_handle);
 
-    pcnt_isr_register(flowcounter_intr_handler, NULL, 0, &user_isr_handle);
     event_queue = xQueueCreate(10, sizeof(pcnt_evt_t));
     if (!event_queue) {
         pcnt_isr_unregister(user_isr_handle);
@@ -188,17 +200,17 @@ void flowcounter_init() {
 }
 
 void flowcounter_deinit() {
-    if(!user_isr_handle) return;
-
-    pcnt_isr_unregister(user_isr_handle);
-    vTaskDelete(flowcounter_bgtask_hdl);
-    vQueueDelete(event_queue);
-    for(int id = PCNT_UNIT_0; id < PCNT_UNIT_MAX; id++) {
-        if (allocated[id]) {
-            flowcounter_stop(id);
-            free(allocated[id]);
-            allocated[id] = NULL;
-        }
-    }
-    user_isr_handle = NULL;
+    // if(!user_isr_handle) return;
+    //
+    // pcnt_isr_unregister(user_isr_handle);
+    // vTaskDelete(flowcounter_bgtask_hdl);
+    // vQueueDelete(event_queue);
+    // for(int id = PCNT_UNIT_0; id < PCNT_UNIT_MAX; id++) {
+    //     if (allocated[id]) {
+    //         flowcounter_stop(id);
+    //         free(allocated[id]);
+    //         allocated[id] = NULL;
+    //     }
+    // }
+    // user_isr_handle = NULL;
 }

@@ -14,7 +14,7 @@
 #include <nvs_flash.h>
 #include <stdint.h>
 #include <sys/param.h>
-#include "driver/pcnt.h"
+#include "driver/pulse_cnt.h"
 #include "nvs_flash.h"
 #include "esp_netif.h"
 #include "esp_eth.h"
@@ -27,7 +27,7 @@
 
 static const char *TAG = "AutoWatS-proto";
 
-pcnt_unit_t counters[2];
+pcnt_unit_handle_t counters[2];
 
 mcp23017_t mcp23017 = {
     .i2c_addr = MCP23017_DEFAULT_ADDR + CONFIG_AUTOWATS_I2C_MCP23017_ADDR_OFFSET,
