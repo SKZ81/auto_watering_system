@@ -42,7 +42,7 @@
 
 // -----------   arbitrary/default values ---------------------
 #define SCALE_I2C_DEFAULT_NB_READS   10   // Number of reads meaned, when 0 is passed to SCALE_I2C_GET_VALUE or SCALE_I2C_READ
-#define BUFFER_SIZE                  8    // Size of argument/reply buffer. Actually sizeof(float) == 4 should be enough.
+#define SCALE_I2C_BUFFER_SIZE        8    // Size of argument/reply buffer. Actually sizeof(float) == 4 should be enough.
 #define SCALE_I2C_DEFAULT_ASYNC_PERIOD 60 // in seconds.
                                           // 0 deactivate ASYNC_READ
 #define SCALE_I2C_DEFAULT_CALIBRATION (float)12800

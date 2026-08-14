@@ -98,7 +98,7 @@ mcp23017_err_t mcp23017_write_register(mcp23017_t *mcp, mcp23017_reg_t reg, mcp2
    i2c_master_write_byte(cmd, r, ACK_CHECK_EN);
    i2c_master_write_byte(cmd, v, ACK_CHECK_EN);
    i2c_master_stop(cmd);
-   esp_err_t ret = i2c_master_cmd_begin(mcp->port, cmd, 1000 / portTICK_RATE_MS);
+   esp_err_t ret = i2c_master_cmd_begin(mcp->port, cmd, 1000 / portTICK_PERIOD_MS);
    i2c_cmd_link_delete(cmd);
    if (ret != ESP_OK) {
       ESP_LOGE(TAG,"ERROR: unable to write to register : %s", esp_err_to_name(ret));
@@ -124,7 +124,7 @@ mcp23017_err_t mcp23017_read_register(mcp23017_t *mcp, mcp23017_reg_t reg, mcp23
 	i2c_master_write_byte(cmd, (mcp->i2c_addr << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
 	i2c_master_write_byte(cmd, r, 1);
 	i2c_master_stop(cmd);
-	esp_err_t ret =i2c_master_cmd_begin(mcp->port, cmd, 1000 / portTICK_RATE_MS);
+	esp_err_t ret =i2c_master_cmd_begin(mcp->port, cmd, 1000 / portTICK_PERIOD_MS);
 	i2c_cmd_link_delete(cmd);
 	if( ret != ESP_OK ) {
 	   ESP_LOGE(TAG,"ERROR: unable to write address %02x to read reg %02x",mcp->i2c_addr,r);
@@ -136,7 +136,7 @@ mcp23017_err_t mcp23017_read_register(mcp23017_t *mcp, mcp23017_reg_t reg, mcp23
 	i2c_master_write_byte(cmd, (mcp->i2c_addr << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
 	i2c_master_read_byte(cmd, data, 1);
 	i2c_master_stop(cmd);
-	ret =i2c_master_cmd_begin(mcp->port, cmd, 1000 / portTICK_RATE_MS);
+	ret =i2c_master_cmd_begin(mcp->port, cmd, 1000 / portTICK_PERIOD_MS);
 	i2c_cmd_link_delete(cmd);
 	if( ret != ESP_OK ) {
 	   ESP_LOGE(TAG,"ERROR: unable to read reg %02x from address %02x",r,mcp->i2c_addr);
