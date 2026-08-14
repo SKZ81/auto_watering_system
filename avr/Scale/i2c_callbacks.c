@@ -1,22 +1,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <avr/pgmspace.h>
+#include <avr/interrupt.h>
+#include "debug.h"
+#include "avr_timer.h"
 #include "i2c_callbacks.h"
 #ifndef STUB_HX711
   #include "HX711.h"
 #endif
 
-// static int32_t zero_offset = 0;
-// static float calibration_factor = 1.0;
-#ifndef DEBUG
-#define DEBUG 1
-#endif
-
-#if DEBUG
-    #define dbg(x, ...) printf_P(PSTR(x) ,##__VA_ARGS__)
-#else
-    #define dbg(x, ...)
-#endif
 
 #ifdef STUB_HX711
 // when STUB, those variable are to "emulate" HX711, which stores those values internally
@@ -24,6 +16,10 @@ static int32_t zero_offset = 0;
 static float calibration_factor = 1.0;
 #endif
 
+// Access to variable declared in main.c
+extern float    async_value;
+extern uint8_t  async_nb_reads;
+void set_trigger_mesurement();
 
 
 uint8_t scale_i2c_power_down       (uint8_t *buffer, uint8_t buffer_len) {
@@ -81,6 +77,29 @@ uint8_t scale_i2c_set_calibration  (uint8_t *buffer, uint8_t buffer_len) {
     return 0;
 }
 
+uint8_t scale_i2c_set_async_nb_reads (uint8_t *buffer, uint8_t buffer_len) {
+    dbg("SET_ASYNC_NB_READS to %d\n", buffer[0]);
+    cli();
+    async_nb_reads = buffer[0];
+    sei();
+    return 0;
+}
+
+uint8_t scale_i2c_set_async_period   (uint8_t *buffer, uint8_t buffer_len) {
+    uint16_t period = buffer[0] * 10;
+    dbg("SET_ASYNC_PERIOD to %d\n", period);
+    if (period == 0) {
+        dbg("deinit timer");
+        avr_timer_deinit();
+    } else if (avr_timer_is_init()) {
+        dbg("reinit timer");
+        avr_timer_init(period, set_trigger_mesurement);
+    } else {
+        dbg("set new timer threshold");
+        avr_timer_set_threshold(period);
+    }
+    return 0;
+}
 
 
 uint8_t scale_i2c_get_zero_offset  (uint8_t *buffer, uint8_t buffer_len) {
@@ -143,3 +162,8 @@ uint8_t scale_i2c_get_calibration  (uint8_t *buffer, uint8_t buffer_len) {
 }
 
 
+uint8_t scale_i2c_get_async_value  (uint8_t *buffer, uint8_t buffer_len) {
+    dbg("GET_ASYNC_VALUE (%f)\n", async_value);
+    memcpy(buffer, &async_value, sizeof(float));
+    return sizeof(float);
+}

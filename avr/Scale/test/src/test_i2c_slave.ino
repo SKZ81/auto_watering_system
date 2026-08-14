@@ -57,14 +57,14 @@ command_t commands[] = {
     {SCALE_I2C_TARE,                1,              read_uint8,     0},
     {SCALE_I2C_SET_ZERO_OFFSET,     3,              read_uint24,    0},
     {SCALE_I2C_SET_CALIBRATION,     sizeof(float),  read_float,     0},
+    {SCALE_I2C_SET_ASYNC_NB_READS,  1,              read_uint8,     0},
+    {SCALE_I2C_SET_ASYNC_PERIOD,    1,              read_uint8,     0},
     {SCALE_I2C_GET_ZERO_OFFSET,     0,              no_read,        3},
     {SCALE_I2C_READ,                1,              read_uint8,     3},
     {SCALE_I2C_GET_VALUE,           1,              read_uint8,     sizeof(float)},
-    {SCALE_I2C_GET_CALIBRATION,     0,              no_read,        sizeof(float)}
+    {SCALE_I2C_GET_CALIBRATION,     0,              no_read,        sizeof(float)},
+    {SCALE_I2C_GET_ASYNC_VALUE,     0,              no_read,        sizeof(float)}
 };
-
-
-
 
 
 
@@ -89,21 +89,36 @@ void loop(void) {
 
     Serial.println();
     Serial.println("______________________");
-    Serial.println(" 1 - POWER_DOWN");
-    Serial.println(" 2 - POWER_UP");
-    Serial.println(" 3 - TARE");
-    Serial.println(" 4 - SET_ZERO_OFFSET");
-    Serial.println(" 5 - SET_CALIBRATION");
-    Serial.println(" 6 - GET_ZERO_OFFSET");
-    Serial.println(" 7 - READ");
-    Serial.println(" 8 - GET_VALUE");
-    Serial.println(" 9 - GET_CALIBRATION");
+    Serial.println(" 0 - POWER_DOWN");
+    Serial.println(" 1 - POWER_UP");
+    Serial.println(" 2 - TARE");
+    Serial.println(" 3 - SET_ZERO_OFFSET");
+    Serial.println(" 4 - SET_CALIBRATION");
+    Serial.println(" 5 - SET_ASYNC_NB_READS");
+    Serial.println(" 6 - SET_ASYNC_PERIOD");
+    Serial.println(" 7 - GET_ZERO_OFFSET");
+    Serial.println(" 8 - READ");
+    Serial.println(" 9 - GET_VALUE");
+    Serial.println(" A - GET_CALIBRATION");
+    Serial.println(" B - GET_ASYNC_VALUE");
     Serial.print("Enter choice : ");
     while(!Serial.available()) {}
-    char char_cmd = Serial.read();
+    char char_cmd = toupper(Serial.read());
+
     uint8_t cmd = 0xFF;
 
-    if (char_cmd<'1' || char_cmd>'9') {
+    if (char_cmd >= '1' && char_cmd <= '9') {
+        cmd = char_cmd - '0';
+    }
+    if (char_cmd >= 'A' && char_cmd <= 'C') {
+        cmd = char_cmd - 'A' + 10;
+    }
+
+    Serial.print(char_cmd);
+    Serial.print(" => ");
+    Serial.print(cmd);
+
+    if (cmd == 0xFF) {
         Serial.print(">>> Unknown command ");
         Serial.println(char_cmd);
         return; // next loop()
@@ -111,14 +126,13 @@ void loop(void) {
         Serial.println();
     }
 
-    cmd = char_cmd - '1';
 
     buffer[0] = commands[cmd].code;
     commands[cmd].read_callback(buffer+1);
 
     Serial.print(">>> I2C communication, will send command_code: ");
     Serial.print(commands[cmd].code, DEC);
-    Serial.print(", with ");
+    Serial.print(", with ")  ;
     Serial.print(commands[cmd].arg_len, DEC);
     Serial.print(" bytes of data = [ ");
     for(uint8_t i=0; i<commands[cmd].arg_len; i++) {

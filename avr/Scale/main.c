@@ -1,26 +1,5 @@
-/*
- Example using the SparkFun HX711 breakout board with a scale
- By: Nathan Seidle
- SparkFun Electronics
- Date: November 19th, 2014
- License: This code is public domain but you buy me a beer if you use this and we meet someday (Beerware license).
- 
- This is the calibration sketch. Use it to determine the calibration_factor that the main example uses. It also
- outputs the zero_factor useful for projects that have a permanent mass on the scale in between power cycles.
- 
- Setup your scale and start the sketch WITHOUT a weight on the scale
- Once readings are displayed place the weight on the scale
- Press +/- or a/z to adjust the calibration_factor until the output readings match the known weight
- Use this calibration_factor on the example sketch
- 
- This example assumes pounds (lbs). If you prefer kilograms, change the Serial.print(" lbs"); line to kg. The
- calibration factor will be significantly different but it will be linearly related to lbs (1 lbs = 0.453592 kg).
- 
- Your calibration factor may be very positive or very negative. It all depends on the setup of your scale system
- and the direction the sensors deflect from zero state
-
- This example code uses bogde's excellent library: https://github.com/bogde/HX711
- bogde's library is released under a GNU GENERAL PUBLIC LICENSE
+#include "avr_uart.h"
+#include "avr_timer.h"
 
  Arduino pin 2 -> HX711 CLK
  3 -> DOUT
@@ -33,16 +12,27 @@
  
 */
 
-// #include "HX711.h"
-#include "avr_uart.h"
-#include "scale_i2c.h"
+#include "debug.h"
 #include <avr/cpufunc.h>
+#include <stdint.h>
 #include <util/delay.h>
 #ifndef STUB_HX711
   #include "HX711.h"
 #endif
 
-float calibration_factor = 12800;
+
+
+static uint8_t i2c_buffer[SCALE_I2C_BUFFER_SIZE]={0};
+
+
+float    async_value = 0.0;
+uint8_t  async_nb_reads = SCALE_I2C_DEFAULT_NB_READS;
+uint8_t  trigger_measurement = 0;
+
+void set_trigger_mesurement() {
+    // called from an ISR, so no need for cli/sei
+    trigger_measurement = 1;
+}
 
 void init(void) {
     avr_uart_init();
@@ -51,10 +41,14 @@ void init(void) {
     i2c_scale_init();
 #ifndef STUB_HX711
     HX711_init(128);
+    HX711_set_scale(SCALE_I2C_DEFAULT_CALIBRATION);
 #endif
+    avr_timer_init(SCALE_I2C_DEFAULT_ASYNC_PERIOD,
+                   set_trigger_mesurement);
 }
 
 int main(void) {
+    int16_t last_count = -1;
     init();
 
 #ifdef STUB_HX711
@@ -64,6 +58,22 @@ int main(void) {
 #endif
 
     while(1) {
-        _NOP(); // all the magic happends in interrupts.
+        int16_t count = avr_timer_get_seconds();
+        if (count != last_count) {
+            dbg("%d / %d\n", count, avr_timer_get_threshold());
+            last_count = count;
+        }
+
+        if (trigger_measurement) {
+            cli();
+            trigger_measurement = 0;
+            sei();
+#ifdef STUB_HX711
+            async_value = 9876.54;
+#else
+            async_value = HX711_get_mean_units(async_nb_reads);
+#endif
+            dbg("** Async read, got value = %f\n", async_value);
+        }
     }
 }
