@@ -16,3 +16,6 @@
 [submodule "avr/libs/avr_uart"]
         path = avr/libs/avr_uart
         url = git@github.com:SKZ81/avr_uart.git
+[submodule "avr/MoistureSensor"]
+	path = avr/MoistureSensor
+	url = git@github.com:SKZ81/AutoWatS_moisture_sensor.git
