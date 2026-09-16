@@ -26,9 +26,9 @@ extern bool     trigger_async_tare;
 extern uint8_t  async_tare_nbread;
 
 uint8_t scale_i2c_power_down       (uint8_t *buffer, uint8_t buffer_len) {
-    dbg("POWER DOWN\n");
+    dbg("POFF\n");
 #ifndef STUB_HX711
-    HX711_power_up();
+    HX711_power_down();
 #endif
     return 0;
 }
@@ -36,9 +36,9 @@ uint8_t scale_i2c_power_down       (uint8_t *buffer, uint8_t buffer_len) {
 
 
 uint8_t scale_i2c_power_up         (uint8_t *buffer, uint8_t buffer_len) {
-    dbg("POWER UP\n");
+    dbg("PON\n");
 #ifndef STUB_HX711
-    HX711_power_down();
+    HX711_power_up();
 #endif
     return 0;
 }
@@ -56,8 +56,11 @@ uint8_t scale_i2c_tare             (uint8_t *buffer, uint8_t buffer_len) {
 
 
 uint8_t scale_i2c_set_zero_offset  (uint8_t *buffer, uint8_t buffer_len) {
-    long offset = ((int32_t)buffer[0]) << 16 | ((int32_t)buffer[1]) << 8 | ((int32_t)buffer[2]);
-    dbg("SET_ZERO_OFFSET to %ld\n", offset);
+    long offset =
+        ((int32_t)(int8_t)buffer[0] << 16) |
+        ((int32_t)buffer[1] << 8) |
+        (int32_t)buffer[2];
+    dbg("SZOFF %ld\n", offset);
 #ifndef STUB_HX711
     HX711_set_offset(offset);
 #else
@@ -71,7 +74,7 @@ uint8_t scale_i2c_set_zero_offset  (uint8_t *buffer, uint8_t buffer_len) {
 uint8_t scale_i2c_set_calibration  (uint8_t *buffer, uint8_t buffer_len) {
     float calib = 0.0;
     memcpy(&calib, buffer, sizeof(float));
-    dbg("SET_CALIBRATION to %f\n", calib);
+    dbg("SCAL %f\n", calib);
 #ifndef STUB_HX711
     HX711_set_scale(calib);
 #else
@@ -81,7 +84,7 @@ uint8_t scale_i2c_set_calibration  (uint8_t *buffer, uint8_t buffer_len) {
 }
 
 uint8_t scale_i2c_set_async_nb_reads (uint8_t *buffer, uint8_t buffer_len) {
-    dbg("SET_ASYNC_NB_READS to %d\n", buffer[0]);
+    dbg("SASNBRD %d\n", buffer[0]);
     cli();
     async_nb_reads = buffer[0];
     sei();
@@ -112,7 +115,7 @@ uint8_t scale_i2c_get_zero_offset  (uint8_t *buffer, uint8_t buffer_len) {
 #else
                 = zero_offset;
 #endif
-    dbg("GET_ZERO_OFFSET (it is %ld)\n", offset);
+    dbg("GZOFF %ld\n", offset);
     buffer[0] = (offset & 0x00FF0000)>>16;
     buffer[1] = (offset & 0x0000FF00)>>8;
     buffer[2] = (offset & 0x000000FF);
@@ -159,14 +162,14 @@ uint8_t scale_i2c_get_calibration  (uint8_t *buffer, uint8_t buffer_len) {
 #else
                 = calibration_factor;
 #endif
-    dbg("GET_CALIBRATION (it is %f)\n", calib);
+    dbg("GCAL %f\n", calib);
     memcpy(buffer, &calib, sizeof(float));
     return sizeof(float);
 }
 
 
 uint8_t scale_i2c_get_async_value  (uint8_t *buffer, uint8_t buffer_len) {
-    dbg("GET_ASYNC_VALUE (%f)\n", async_value);
+    dbg("GASVAL %f\n", async_value);
     memcpy(buffer, &async_value, sizeof(float));
     return sizeof(float);
 }
