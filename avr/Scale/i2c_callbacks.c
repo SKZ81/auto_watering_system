@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -18,7 +19,7 @@ static float calibration_factor = 1.0;
 #endif
 
 // Access to variable declared in main.c
-extern float    async_value;
+extern long    async_raw_value;
 extern uint8_t  async_nb_reads;
 void set_trigger_mesurement();
 
@@ -169,6 +170,7 @@ uint8_t scale_i2c_get_calibration  (uint8_t *buffer, uint8_t buffer_len) {
 
 
 uint8_t scale_i2c_get_async_value  (uint8_t *buffer, uint8_t buffer_len) {
+    float async_value = (async_raw_value - HX711_get_offset()) / HX711_get_scale();
     dbg("GASVAL %f\n", async_value);
     memcpy(buffer, &async_value, sizeof(float));
     return sizeof(float);
