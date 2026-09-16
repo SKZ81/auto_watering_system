@@ -1,6 +1,14 @@
 #ifndef __I2C_CALLBACKS_H__
 #define __I2C_CALLBACKS_H__
 
+typedef struct {
+    bool calibration_configured  : 1;
+    bool zero_offset_configured  : 1;
+    bool async_nbread_configured : 1;
+    bool async_period_configured : 1;
+} config_byte_t;
+
+
 uint8_t scale_i2c_power_down         (uint8_t *buffer, uint8_t buffer_len);
 uint8_t scale_i2c_power_up           (uint8_t *buffer, uint8_t buffer_len);
 uint8_t scale_i2c_tare               (uint8_t *buffer, uint8_t buffer_len);
@@ -16,5 +24,7 @@ uint8_t scale_i2c_get_calibration    (uint8_t *buffer, uint8_t buffer_len);
 
 uint8_t scale_i2c_get_async_value    (uint8_t *buffer, uint8_t buffer_len);
 uint8_t scale_i2c_async_tare         (uint8_t *buffer, uint8_t buffer_len);
+
+uint8_t scale_i2c_get_config_byte    (uint8_t *buffer, uint8_t buffer_len);
 
 #endif
