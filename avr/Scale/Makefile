@@ -3,7 +3,7 @@ ARDUINO_LIBS  = HX711 avr_uart avr-i2c-slave
 
 BOARD_TAG     = nano
 BOARD_SUB     = atmega328
-MONITOR_PORT  = /dev/ttyUSB0
+# MONITOR_PORT  = /dev/ttyUSB0
 # Needed with older bootloader
 # AVRDUDE_ARD_BAUDRATE = 57600
 # BOARD_TAG     = uno
