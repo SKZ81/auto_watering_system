@@ -17,6 +17,7 @@
 #endif
 
 i2c_slaveSM_command_t commands[] = {
+    /* WRITE commands */
     {SCALE_I2C_POWER_DOWN,         0,             scale_i2c_power_down},
     {SCALE_I2C_POWER_UP,           0,             scale_i2c_power_up},
     {SCALE_I2C_TARE,               1,             scale_i2c_tare},
@@ -24,6 +25,8 @@ i2c_slaveSM_command_t commands[] = {
     {SCALE_I2C_SET_CALIBRATION,    sizeof(float), scale_i2c_set_calibration},
     {SCALE_I2C_SET_ASYNC_NB_READS, 1,             scale_i2c_set_async_nb_reads},
     {SCALE_I2C_SET_ASYNC_PERIOD,   1,             scale_i2c_set_async_period},
+    {SCALE_I2C_ASYNC_TARE,         1,             scale_i2c_async_tare},
+    /* READ commands */
     {SCALE_I2C_GET_ZERO_OFFSET,    0,             scale_i2c_get_zero_offset},
     {SCALE_I2C_READ,               1,             scale_i2c_read},
     {SCALE_I2C_GET_VALUE,          1,             scale_i2c_get_value},
@@ -38,6 +41,9 @@ static uint8_t i2c_buffer[SCALE_I2C_BUFFER_SIZE]={0};
 float    async_value = 0.0;
 uint8_t  async_nb_reads = SCALE_I2C_DEFAULT_NB_READS;
 bool     trigger_measurement = false;
+// Variables for ASYNC TARE
+bool     trigger_async_tare = false;
+uint8_t  async_tare_nbread = 0;
 
 
 void set_trigger_mesurement() {
@@ -87,6 +93,18 @@ int main(void) {
             async_value = HX711_get_mean_units(async_nb_reads);
 #endif
             dbg("** Async read, got value = %f\n", async_value);
+        }
+
+        if(trigger_async_tare) {
+            printf("** Async tare\n");
+            i2c_slave_busy();
+            HX711_tare(async_tare_nbread ?
+                          async_tare_nbread :
+                          SCALE_I2C_DEFAULT_NB_READS);
+            cli();
+            trigger_async_tare = false;
+            i2c_slave_ready();
+            sei();
         }
     }
 }

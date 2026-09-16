@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 #include "debug.h"
@@ -21,6 +22,8 @@ extern float    async_value;
 extern uint8_t  async_nb_reads;
 void set_trigger_mesurement();
 
+extern bool     trigger_async_tare;
+extern uint8_t  async_tare_nbread;
 
 uint8_t scale_i2c_power_down       (uint8_t *buffer, uint8_t buffer_len) {
     dbg("POWER DOWN\n");
@@ -166,4 +169,12 @@ uint8_t scale_i2c_get_async_value  (uint8_t *buffer, uint8_t buffer_len) {
     dbg("GET_ASYNC_VALUE (%f)\n", async_value);
     memcpy(buffer, &async_value, sizeof(float));
     return sizeof(float);
+}
+
+
+uint8_t scale_i2c_async_tare  (uint8_t *buffer, uint8_t buffer_len) {
+    dbg("ASTAR\n");
+    trigger_async_tare = true;
+    async_tare_nbread = buffer[0];
+    return 0;
 }

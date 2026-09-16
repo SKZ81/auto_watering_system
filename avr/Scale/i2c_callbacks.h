@@ -15,5 +15,6 @@ uint8_t scale_i2c_get_value          (uint8_t *buffer, uint8_t buffer_len);
 uint8_t scale_i2c_get_calibration    (uint8_t *buffer, uint8_t buffer_len);
 
 uint8_t scale_i2c_get_async_value    (uint8_t *buffer, uint8_t buffer_len);
+uint8_t scale_i2c_async_tare         (uint8_t *buffer, uint8_t buffer_len);
 
 #endif

@@ -26,6 +26,9 @@
 #define SCALE_I2C_SET_ASYNC_PERIOD   7    // arg : 1 bytes
 // Number of seconds between 2 ASYNC_READ divided by 10.
 // E.g. passing 6 here will trigger an ASYNC_READ every minute (6*10 s)
+#define SCALE_I2C_ASYNC_TARE         8    // arg : nb reads to mean. 0 is default (SCALE_I2C_DEFAULT_NB_READS).
+// Triggers an async tare
+
 
 // ===========   READ commands   ==============================
 
