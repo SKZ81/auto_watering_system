@@ -2,6 +2,7 @@
 #include "avr_timer.h"
 
 #include "scale_i2c_interface.h"
+#include "I2CSlave.h" // for i2c_slave_busy/ready
 #include "I2CSlave_state_machine.h"
 #include "i2c_callbacks.h"
 
@@ -37,8 +38,8 @@ i2c_slaveSM_command_t commands[] = {
 
 static uint8_t i2c_buffer[SCALE_I2C_BUFFER_SIZE]={0};
 
-
-float    async_value = 0.0;
+// Variables for ASYNC READ
+long     async_raw_value = 0;
 uint8_t  async_nb_reads = SCALE_I2C_DEFAULT_NB_READS;
 bool     trigger_measurement = false;
 // Variables for ASYNC TARE
@@ -74,12 +75,14 @@ int main(void) {
     printf("i2c scale STUB (for testing i²c communication)\n");
 #else
     printf("i2c scale\n");
+    async_raw_value = HX711_read_average(async_nb_reads);
+    printf("** initial Async value = 0x%lx\n", async_raw_value);
 #endif
 
     while(1) {
         int16_t count = avr_timer_get_seconds();
         if (count != last_count) {
-            dbg("%d / %d\n", count, avr_timer_get_threshold());
+            printf("%d / %d\n", count, avr_timer_get_threshold());
             last_count = count;
         }
 
@@ -88,11 +91,16 @@ int main(void) {
             trigger_measurement = false;
             sei();
 #ifdef STUB_HX711
-            async_value = 9876.54;
+            async_raw_value = 0x987654;
 #else
-            async_value = HX711_get_mean_units(async_nb_reads);
+            i2c_slave_busy();
+            async_raw_value = HX711_read_average(async_nb_reads);
+            i2c_slave_ready();
 #endif
-            dbg("** Async read, got value = %f\n", async_value);
+            printf("** Async read, got value = %lx\n", async_raw_value);
+            printf("Config: calibration: %f, Zero Offset: %ld (0x%lx), value=%f\n",
+                   HX711_get_scale(), HX711_get_offset(), HX711_get_offset(),
+                   (async_raw_value - HX711_get_offset())/HX711_get_scale());
         }
 
         if(trigger_async_tare) {
