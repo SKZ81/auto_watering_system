@@ -10,6 +10,7 @@
 #include <avr/interrupt.h>
 #include <avr/cpufunc.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <util/delay.h>
 #ifndef STUB_HX711
   #include "HX711.h"
@@ -36,11 +37,12 @@ static uint8_t i2c_buffer[SCALE_I2C_BUFFER_SIZE]={0};
 
 float    async_value = 0.0;
 uint8_t  async_nb_reads = SCALE_I2C_DEFAULT_NB_READS;
-uint8_t  trigger_measurement = 0;
+bool     trigger_measurement = false;
+
 
 void set_trigger_mesurement() {
     // called from an ISR, so no need for cli/sei
-    trigger_measurement = 1;
+    trigger_measurement = true;
 }
 
 void init(void) {
@@ -77,7 +79,7 @@ int main(void) {
 
         if (trigger_measurement) {
             cli();
-            trigger_measurement = 0;
+            trigger_measurement = false;
             sei();
 #ifdef STUB_HX711
             async_value = 9876.54;
