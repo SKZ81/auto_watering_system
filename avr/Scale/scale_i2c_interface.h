@@ -7,6 +7,8 @@
 
 // Address
 #define SCALE_I2C_ADDRESS 0x17
+// Frequency
+#define SCALE_I2C_FREQUENCY 100000 // Bauds
 
 // ===========   WRITE commands (no return)  ==================
 

@@ -47,7 +47,7 @@ void init(void) {
     avr_uart_init();
     stdout = &avr_uart_output;
     stdin  = &avr_uart_input_echo;
-    i2c_slaveSM_init(SCALE_I2C_ADDRESS,
+    i2c_slaveSM_init(SCALE_I2C_ADDRESS, SCALE_I2C_FREQUENCY,
                      commands, sizeof(commands)/sizeof(i2c_slaveSM_command_t),
                      i2c_buffer, SCALE_I2C_BUFFER_SIZE);
 #ifndef STUB_HX711
