@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -26,6 +25,8 @@ void set_trigger_mesurement();
 extern bool     trigger_async_tare;
 extern uint8_t  async_tare_nbread;
 
+extern config_byte_t config_byte;
+
 uint8_t scale_i2c_power_down       (uint8_t *buffer, uint8_t buffer_len) {
     dbg("POFF\n");
 #ifndef STUB_HX711
@@ -51,6 +52,7 @@ uint8_t scale_i2c_tare             (uint8_t *buffer, uint8_t buffer_len) {
 #ifndef STUB_HX711
     HX711_tare(buffer[0]);
 #endif
+    config_byte.zero_offset_configured = true;
     return 0;
 }
 
@@ -67,6 +69,7 @@ uint8_t scale_i2c_set_zero_offset  (uint8_t *buffer, uint8_t buffer_len) {
 #else
     zero_offset = offset;
 #endif
+    config_byte.zero_offset_configured = true;
     return 0;
 }
 
@@ -81,6 +84,7 @@ uint8_t scale_i2c_set_calibration  (uint8_t *buffer, uint8_t buffer_len) {
 #else
     calibration_factor = calib;
 #endif
+    config_byte.calibration_configured = true;
     return 0;
 }
 
@@ -89,6 +93,7 @@ uint8_t scale_i2c_set_async_nb_reads (uint8_t *buffer, uint8_t buffer_len) {
     cli();
     async_nb_reads = buffer[0];
     sei();
+    config_byte.async_nbread_configured = true;
     return 0;
 }
 
@@ -105,6 +110,7 @@ uint8_t scale_i2c_set_async_period   (uint8_t *buffer, uint8_t buffer_len) {
         dbg("set new timer threshold");
         avr_timer_set_threshold(period);
     }
+    config_byte.async_period_configured = true;
     return 0;
 }
 
@@ -176,6 +182,11 @@ uint8_t scale_i2c_get_async_value  (uint8_t *buffer, uint8_t buffer_len) {
     return sizeof(float);
 }
 
+uint8_t scale_i2c_get_config_byte    (uint8_t *buffer, uint8_t buffer_len) {
+    dbg("GCFGB 0x%02x\n", config_byte);
+    memcpy(buffer, &config_byte, sizeof(uint8_t));
+    return sizeof(uint8_t);
+}
 
 uint8_t scale_i2c_async_tare  (uint8_t *buffer, uint8_t buffer_len) {
     dbg("ASTAR\n");

@@ -33,6 +33,7 @@ i2c_slaveSM_command_t commands[] = {
     {SCALE_I2C_GET_VALUE,          1,             scale_i2c_get_value},
     {SCALE_I2C_GET_CALIBRATION,    0,             scale_i2c_get_calibration},
     {SCALE_I2C_GET_ASYNC_VALUE,    0,             scale_i2c_get_async_value},
+    {SCALE_I2C_GET_CONFIG_BYTE,    0,             scale_i2c_get_config_byte},
 };
 
 
@@ -46,6 +47,8 @@ bool     trigger_measurement = false;
 bool     trigger_async_tare = false;
 uint8_t  async_tare_nbread = 0;
 
+// Config byte keeps track of parameters initalized from i²c
+config_byte_t config_byte =  {false};
 
 void set_trigger_mesurement() {
     // called from an ISR, so no need for cli/sei
@@ -113,6 +116,7 @@ int main(void) {
             trigger_async_tare = false;
             i2c_slave_ready();
             sei();
+            config_byte.zero_offset_configured = true;
         }
     }
 }
