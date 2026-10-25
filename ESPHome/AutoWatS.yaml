@@ -92,7 +92,11 @@ external_components:
   - source:
       type: local
       path: components
-
+  - source:
+      type: git
+      url: https://github.com/SKZ81/esphome-i2c-moisture-sensor
+      ref: main
+    components: [ i2c-moisture-sensor ]
 
 # ============================================================
 # I2C
@@ -375,7 +379,36 @@ sensor:
       step: 0.1
       restore_value: true
 
+  # ----------------------------------------------------------
+  # I²C Soil Moisture Sensor
+  # ----------------------------------------------------------
 
+  - platform: i2c-moisture-sensor
+    address: 0x20
+    update_interval: 5s
+    # new_address: 0x21      # Change the address upon startup, requires a restart.
+    moisture:
+      name: "Soil Moisture"
+      calibration:
+        # min_capacity: 300  # Optional (default 245)
+        # max_capacity: 600  # Optional (default 550)
+        raw: true         # DO NOT Use inbuilt conversion.
+      filters:
+        - skip_initial: 1  # First read is zero, skip it.
+    # NOTE: SKZ81's version of the sensor does not measure temperature
+    # temperature:
+    #   name: "Soil Temperature"
+    #   filters:
+    #     - skip_initial: 1  # First read is zero, skip it.
+    #     - offset: -0.1     # Calibrate readings.
+    illuminance:
+      name: "Ambient Light"
+      calibration:
+        coefficient: -1    # Optional (default -1.525)
+        constant: 100000   # Optional (default 100000)
+        raw: false         # Use inbuilt conversion.
+      filters:
+        - skip_initial: 1  # First read is zero, skip it.
 
 
 # ============================================================
