@@ -27,6 +27,20 @@ extern uint8_t  async_tare_nbread;
 
 extern config_byte_t config_byte;
 
+extern bool     got_temperature;
+extern float    temperature;
+extern float    ref_temperature;
+extern float    temperature_calib;
+
+static inline compensate_temp(float weight) {
+    if (!got_temperature
+        || !config_byte.ref_temperature_configured
+        || !config_byte.temp_calibration_configured)
+        return weight;
+
+    return weight * (1)
+}
+
 uint8_t scale_i2c_power_down       (uint8_t *buffer, uint8_t buffer_len) {
     dbg("POFF\n");
 #ifndef STUB_HX711
@@ -114,6 +128,23 @@ uint8_t scale_i2c_set_async_period   (uint8_t *buffer, uint8_t buffer_len) {
     return 0;
 }
 
+uint8_t scale_i2c_set_temperature (uint8_t *buffer, uint8_t buffer_len) {
+    memcpy(&temperature, buffer, sizeof(float));
+    dbg("STEMP %f\n", temperature);
+    got_temperature = true;
+}
+
+uint8_t scale_i2c_set_temp_calibration (uint8_t *buffer, uint8_t buffer_len) {
+    memcpy(&temperature_calib, buffer, sizeof(float));
+    dbg("STEMPCALIB %f\n", temperature_calib);
+    config_byte.temp_calibration_configured = true;
+}
+
+uint8_t scale_i2c_set_ref_temperature (uint8_t *buffer, uint8_t buffer_len) {
+    memcpy(&ref_temperature, buffer, sizeof(float));
+    dbg("SREF²TEMP %f\n", ref_temperature);
+    config_byte.ref_temperature_configured = true;
+}
 
 uint8_t scale_i2c_get_zero_offset  (uint8_t *buffer, uint8_t buffer_len) {
     long offset
@@ -151,7 +182,7 @@ uint8_t scale_i2c_read             (uint8_t *buffer, uint8_t buffer_len) {
 uint8_t scale_i2c_get_value        (uint8_t *buffer, uint8_t buffer_len) {
     float value
 #ifndef STUB_HX711
-                = HX711_get_mean_units(buffer[0]);
+                = compensate_temp(HX711_get_mean_units(buffer[0]));
 #else
                 = 1234.56;
 #endif
@@ -176,7 +207,7 @@ uint8_t scale_i2c_get_calibration  (uint8_t *buffer, uint8_t buffer_len) {
 
 
 uint8_t scale_i2c_get_async_value  (uint8_t *buffer, uint8_t buffer_len) {
-    float async_value = (async_raw_value - HX711_get_offset()) / HX711_get_scale();
+    float async_value = compensate_temp((async_raw_value - HX711_get_offset()) / HX711_get_scale());
     dbg("GASVAL %f\n", async_value);
     memcpy(buffer, &async_value, sizeof(float));
     return sizeof(float);

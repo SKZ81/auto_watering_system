@@ -27,6 +27,9 @@ i2c_slaveSM_command_t commands[] = {
     {SCALE_I2C_SET_ASYNC_NB_READS, 1,             scale_i2c_set_async_nb_reads},
     {SCALE_I2C_SET_ASYNC_PERIOD,   1,             scale_i2c_set_async_period},
     {SCALE_I2C_ASYNC_TARE,         1,             scale_i2c_async_tare},
+    {SCALE_I2C_SET_TEMPERATURE,    sizeof(float), scale_i2c_set_temperature},
+    {SCALE_I2C_SET_TEMP_CALIB,     sizeof(float), scale_i2c_set_temp_calibration},
+    {SCALE_I2C_SET_REF_TEMP,       sizeof(float), scale_i2c_set_ref_temperature},
     /* READ commands */
     {SCALE_I2C_GET_ZERO_OFFSET,    0,             scale_i2c_get_zero_offset},
     {SCALE_I2C_READ,               1,             scale_i2c_read},
@@ -49,6 +52,12 @@ uint8_t  async_tare_nbread = 0;
 
 // Config byte keeps track of parameters initalized from i²c
 config_byte_t config_byte =  {false};
+
+// Current temperature, provided by master
+bool     got_temperature = false;
+float    temperature;
+float    ref_temperature;
+float    temperature_calib;
 
 void set_trigger_mesurement() {
     // called from an ISR, so no need for cli/sei

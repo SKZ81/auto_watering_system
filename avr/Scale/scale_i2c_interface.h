@@ -28,7 +28,14 @@
 // E.g. passing 6 here will trigger an ASYNC_READ every minute (6*10 s)
 #define SCALE_I2C_ASYNC_TARE         0x08  // arg : nb reads to mean. 0 is default (SCALE_I2C_DEFAULT_NB_READS).
 // Triggers an async tare
+#define SCALE_I2C_SET_TEMPERATURE    0x09  // arg : float (4bytes, MSB first)
+#define SCALE_I2C_SET_TEMP_CALIB     0x0A  // arg : float (4bytes, MSB first)
+// Set the reference temperature
+#define SCALE_I2C_SET_REF_TEMP       0x0B  // arg : float (4bytes, MSB first)
+// Set the temperature compensation factor
 
+// When temperature (T), reference_temperature (Tref) and temperature calibration (K) are set, measurement are compensated using the following formula :
+// compensed_weight = weigth * ( 1 - K * ( T - Tref ) )
 
 // ===========   READ commands   ==============================
 

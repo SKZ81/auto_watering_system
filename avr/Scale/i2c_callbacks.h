@@ -2,10 +2,12 @@
 #define __I2C_CALLBACKS_H__
 
 typedef struct {
-    bool calibration_configured  : 1;
-    bool zero_offset_configured  : 1;
-    bool async_nbread_configured : 1;
-    bool async_period_configured : 1;
+    bool calibration_configured      : 1;
+    bool zero_offset_configured      : 1;
+    bool async_nbread_configured     : 1;
+    bool async_period_configured     : 1;
+    bool ref_temperature_configured  : 1;
+    bool temp_calibration_configured : 1;
 } config_byte_t;
 
 
@@ -16,6 +18,9 @@ uint8_t scale_i2c_set_zero_offset    (uint8_t *buffer, uint8_t buffer_len);
 uint8_t scale_i2c_set_calibration    (uint8_t *buffer, uint8_t buffer_len);
 uint8_t scale_i2c_set_async_nb_reads (uint8_t *buffer, uint8_t buffer_len);
 uint8_t scale_i2c_set_async_period   (uint8_t *buffer, uint8_t buffer_len);
+uint8_t scale_i2c_set_temperature    (uint8_t *buffer, uint8_t buffer_len);
+uint8_t scale_i2c_set_temp_calibration (uint8_t *buffer, uint8_t buffer_len);
+uint8_t scale_i2c_set_ref_temperature (uint8_t *buffer, uint8_t buffer_len);
 
 uint8_t scale_i2c_get_zero_offset    (uint8_t *buffer, uint8_t buffer_len);
 uint8_t scale_i2c_read               (uint8_t *buffer, uint8_t buffer_len);
