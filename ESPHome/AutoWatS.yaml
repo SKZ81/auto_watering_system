@@ -106,19 +106,46 @@ i2c:
   timeout: 10ms
 
 
+binary_sensor:
+  # ============================================================
+  # SYSTEM STATUS
+  # ============================================================
+  - platform: status
+    name: "ESP System Status"
+
+
+  # ============================================================
+  # Physical "EMERGENCY_STOP" Button
+  # ============================================================
+  - platform: gpio
+    pin: GPIO36
+    name: "Emergency Stop Button"
+    filters:
+      - delayed_off: 10ms
+    on_press:
+      - if:
+          condition:
+            lambda: |-
+              return id(autowats_status).state != "EMERGENCY_STOP";
+          then:
+            - script.execute:
+                id: stop_dose
+                status: "EMERGENCY_STOP"
+                details: "Physical Emergency button pressed."
+          else:
+            - script.execute: rearm_status
+
 # ============================================================
 # MCP23017
 # ============================================================
-
 mcp23017:
   - id: 'relay_hub'
     address: 0x20
 
 
 # ============================================================
-# RELAYS
+# RELAYS (Controlled by MCP23017)
 # ============================================================
-
 switch:
 
   # ----------------------------------------------------------
@@ -220,6 +247,15 @@ switch:
         output: true
       inverted: true
 
+  - platform: gpio
+    name: "Physical Emergency button's LED"
+    id: physical_emergency_LED
+    pin:
+      mcp23xxx: relay_hub
+      number: 7
+      mode:
+        output: true
+      inverted: true
 
   # ----------------------------------------------------------
   # Flow sensor power
@@ -339,14 +375,8 @@ sensor:
       step: 0.1
       restore_value: true
 
-# ============================================================
-# SYSTEM STATUS
-# ============================================================
 
-binary_sensor:
 
-  - platform: status
-    name: "ESP System Status"
 
 # ============================================================
 # OPERATIONAL STATUS
@@ -978,7 +1008,7 @@ button:
       - script.execute:
           id: stop_dose
           status: "EMERGENCY_STOP"
-          details: "Manual Emergency STOP button pressed"
+          details: "Stopped from from HA Dashboard button."
 
   # ----------------------------------------------------------
   # Rearm status (after errors, emergency stop, ...)
@@ -1050,6 +1080,34 @@ interval:
                 id: stop_dose
                 status: "DONE"
                 details: ""
+
+  # ==========================================================
+  # Blink Physical Emergency Button LED when in REARM status
+  # ==========================================================
+  - interval: 1.5s
+    then:
+      - if:
+          condition:
+            # REARM pending State ?
+            lambda: |-
+              return id(autowats_status).state == "EMERGENCY_STOP";
+          then:
+            - if:
+                condition:
+                  lambda: |-
+                    return id(physical_emergency_LED).state;
+                then:
+                  - switch.turn_off: physical_emergency_LED
+                else:
+                  - switch.turn_on: physical_emergency_LED
+          else:
+          # if REARM not pending, button LED must be ON.
+            - if:
+                condition:
+                  lambda: |-
+                    return !(id(physical_emergency_LED).state);
+                then:
+                  - switch.turn_on: physical_emergency_LED
 
   # ==========================================================
   # DEBUG
