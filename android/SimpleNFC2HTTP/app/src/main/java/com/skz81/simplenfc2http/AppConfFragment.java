@@ -23,6 +23,8 @@ public class AppConfFragment extends Fragment
     private EditText serverEditText;
     private EditText portEditText;
     private EditText prefixEditText;
+    private EditText loginEditText;
+    private EditText passwordEditText;
     private RadioGroup protocolRadioGroup;
     private Button connectButton;
     private MainActivity mainActivity;
@@ -45,6 +47,8 @@ public class AppConfFragment extends Fragment
         serverEditText = view.findViewById(R.id.serverEditText);
         portEditText = view.findViewById(R.id.portEditText);
         prefixEditText = view.findViewById(R.id.prefixEditText);
+        loginEditText = view.findViewById(R.id.loginEditText);
+        passwordEditText = view.findViewById(R.id.passwordEditText);
         protocolRadioGroup = view.findViewById(R.id.protocolRadioGroup);
         connectButton = view.findViewById(R.id.connectServerButton);
         config = AppConfiguration.instance();
@@ -58,12 +62,33 @@ public class AppConfFragment extends Fragment
         setPortEnabled(config.isHttps());
         prefixEditText.setText(config.urlPrefix());
 
+        loginEditText.setText(config.login());
+        passwordEditText.setText(config.password());
+
         // Register listeners to update config object as soon as UI field is modifed
         serverEditText.addTextChangedListener(this);
         portEditText.addTextChangedListener(this);
         prefixEditText.addTextChangedListener(this);
         protocolRadioGroup.setOnCheckedChangeListener(this);
+        loginEditText.addTextChangedListener(this);
+        passwordEditText.addTextChangedListener(this);
 
+        Log.d("CONFIG_DEBUG", "login: " +
+            (view.findViewById(R.id.loginEditText) != null));
+        Log.d("CONFIG_DEBUG", "password: " +
+            (view.findViewById(R.id.passwordEditText) != null));
+        loginEditText.post(() -> {
+            Log.d("CONFIG_DEBUG", "login visibility: " +
+                loginEditText.getVisibility());
+
+            Log.d("CONFIG_DEBUG", "login dimensions: " +
+                loginEditText.getWidth() + "x" +
+                loginEditText.getHeight());
+        });
+
+        View parent = (View) loginEditText.getParent();
+        Log.d("CONFIG_DEBUG", "parent dimensions: " +
+            parent.getWidth() + "x" + parent.getHeight());
         return view;
     }
 
@@ -84,6 +109,8 @@ public class AppConfFragment extends Fragment
             config.setPort(0);
         }
         config.setURLPrefix(prefixEditText.getText().toString());
+        config.setLogin(loginEditText.getText().toString());
+        config.setPassword(passwordEditText.getText().toString());
     }
 
     @Override
