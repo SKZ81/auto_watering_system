@@ -257,7 +257,7 @@ public class UpdateFragment extends Fragment
         } catch (JSONException e) {
             Log.e(TAG, "Error while serializing UPDATE req JSON param: " + e.getMessage());
         }
-        new SendToServerTask(new SendToServerTask.ReplyListener() {
+        new AuthenticationManager(new SendToServerTask.ReplyListener() {
             @Override public void onReplyFromServer(String data) {
                 Log.i(TAG, "uopdate, replyListener.decodeServerResponse(" + data + ")");
                 if (data.strip().equals("{\"result\": \"OK\"}")) {
@@ -297,7 +297,7 @@ public class UpdateFragment extends Fragment
 
     private void discardUUID(String uuid) {
         AppConfiguration config = AppConfiguration.instance();
-        new SendToServerTask(new SendToServerTask.ReplyListener() {
+        new AuthenticationManager(new SendToServerTask.ReplyListener() {
             @Override
             public void onReplyFromServer(String data) {
                 if (data.equals("{\"result\": \"OK\"}")) {
@@ -318,7 +318,7 @@ public class UpdateFragment extends Fragment
                 mainActivity.displayError(TAG, "Error discarding UUID: " + data);
             }
         }).POST(config.getServerURL() + config.DISCARD_UUID_URL,
-                "{\"uuid\" : \"" + uuid + "\"}");
+                "{\"uuid\": \"" + uuid + "\"}");
     }
 
     public void showDatePickerDialog(EditText v) {
@@ -389,6 +389,7 @@ public class UpdateFragment extends Fragment
             Log.i(TAG, "AppName: " + mainActivity.appName());
             try {
                 json_data.put("uuid", newUUID);
+
                 NdefMessage cached = ndef.getNdefMessage();
                 if (cached == null) {
                     throw new IOException("Tag is empty");
@@ -419,7 +420,7 @@ public class UpdateFragment extends Fragment
                 Log.e(TAG, "Format Error while writing NDEF messages: " + e.getMessage());
             } finally {
                 Log.d(TAG, "Send JSON to server for tag ID creation:" + json_data.toString());
-                new SendToServerTask(new SendToServerTask.ReplyListener() {
+                new AuthenticationManager(new SendToServerTask.ReplyListener() {
                     @Override public void onReplyFromServer(String data) {
                         if (data == null || !data.strip().equals("{\"result\": \"OK\"}")) {
                             mainActivity.displayError(TAG,

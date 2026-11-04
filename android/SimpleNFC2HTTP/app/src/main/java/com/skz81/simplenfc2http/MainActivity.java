@@ -214,7 +214,8 @@ public class MainActivity extends FragmentActivity
             Log.w(TAG, "NFC Disabled !..");
         }
         connectionManager = new ConnectionManager(this);
-        connectionManager.startServerPing(15000/*ms*/);
+        connectionManager.requestTimestamps();
+        // connectionManager.startServerPing(15000/*ms*/);
     }
 
     public void connectServer() {

@@ -28,6 +28,7 @@ public class SendToServerTask {
     private boolean done = false;
     private static ConnectionStateWatcher connectionWatcher = null;
 
+    /* The "client" callbacks for this request */
     public interface ReplyListener {
         default String decodeServerResponse(InputStream input) {
             StringBuilder reply = new StringBuilder();
@@ -55,6 +56,7 @@ public class SendToServerTask {
         void onError(String data);
     }
 
+    /* Interface to main application, to keep it up with connexion state */
     public interface ConnectionStateWatcher {
         public void onServerConnectionOk();
         public void onServerConnectionError(String error);
@@ -63,6 +65,9 @@ public class SendToServerTask {
     static public void setConnectionWatcher(ConnectionStateWatcher watcher) {
         connectionWatcher = watcher;
     }
+
+
+    // =======================================================================
 
     public SendToServerTask(@NonNull ReplyListener replyListener) {
         this.replyListener = replyListener;
@@ -97,6 +102,8 @@ public class SendToServerTask {
     }
 
     public void POST(final String url, final String param) {
+        AuthenticationManager authManager = new AuthenticationManager(replyListener);
+        replyListener = authManager;
         execute("POST", url, param);
     }
 
@@ -106,6 +113,7 @@ public class SendToServerTask {
         if (params != null) {
             JSONObject jsonParams = new JSONObject();
             try {
+                jsonParams.put("session_key", R.string.session_key);
                 for (Map.Entry<String, String> entry : params.entrySet()) {
                     jsonParams.put(entry.getKey(), entry.getValue());
                 }
