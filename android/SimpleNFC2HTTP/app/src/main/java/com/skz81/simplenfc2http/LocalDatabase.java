@@ -30,8 +30,6 @@ public abstract class LocalDatabase extends RoomDatabase {
         private String tableName;
         private long timestamp;
 
-        public LastUpdate() {} // No-argument constructor (required for Room)
-
         public LastUpdate(String tableName, long timestamp) {
             this.tableName = tableName;
             this.timestamp = timestamp;
