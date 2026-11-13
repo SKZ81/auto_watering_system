@@ -7,4 +7,12 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <array name="culture_fertilizer_colors">
+        <item>#2879C8</item>
+        <item>#24A078</item>
+        <item>#E5A43B</item>
+        <item>#B75CAD</item>
+    </array>
 </resources>
+

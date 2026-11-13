@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/testTabLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <SeekBar
+                    android:id="@+id/days_per_row"
+                    style="@style/Widget.AppCompat.SeekBar.Discrete"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:max="10"
+                    android:progress="3" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.skz81.simplenfc2http.cultureProgram.CultureProgramTimeline
+                    android:id="@+id/culture_timeline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    app:RowHeight="220dp"
+                    app:RowGap="12dp"
+                    app:AxisWidth="52dp"
+
+                    app:TextColor="#D0D0D0"
+                    app:CurrentDayColor="#FF5722"
+                    app:LineWidth="3dp"
+
+                    app:FertilizerColors="@array/culture_fertilizer_colors" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.skz81.simplenfc2http.cultureProgram.CultureProgramEditor
+                    android:id="@+id/culture_program_editor"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                                        app:RowHeight="220dp"
+                    app:RowGap="12dp"
+                    app:AxisWidth="52dp"
+
+                    app:TextColor="#D0D0D0"
+                    app:CurrentDayColor="#FF5722"
+                    app:LineWidth="3dp" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

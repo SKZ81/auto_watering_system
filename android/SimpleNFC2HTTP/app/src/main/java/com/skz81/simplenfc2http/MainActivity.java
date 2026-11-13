@@ -38,6 +38,7 @@ public class MainActivity extends FragmentActivity
 
     private String appName;
     private Varieties varieties;
+    private TestTabFragment testTab;
     private ScanTagsFragment scanTab;
     private UpdateFragment updateTab;
     private AppConfFragment configTab;
@@ -92,6 +93,7 @@ public class MainActivity extends FragmentActivity
     public void onServerConnectionOk() {
         Log.i(TAG, "Connection to server OK : hide loading dialog.");
         hideLoadingDialog();
+        viewPagerAdapter.showPage(testTab);
         viewPagerAdapter.showPage(scanTab);
         viewPagerAdapter.showPage(updateTab);
         viewPagerAdapter.updateViewPager();
@@ -224,13 +226,16 @@ public class MainActivity extends FragmentActivity
 
     private void setupViewPager(ViewPager2 viewPager) {
         viewPagerAdapter = new ViewPagerAdapter(this);
+        testTab = new TestTabFragment();
         scanTab = new ScanTagsFragment();
         updateTab = new UpdateFragment();
         configTab = new AppConfFragment();
 
+        viewPagerAdapter.addPage(testTab, "Test", true);
         viewPagerAdapter.addPage(scanTab, "Scan", true);
         viewPagerAdapter.addPage(updateTab, "Update", true);
         viewPagerAdapter.addPage(configTab, "Config", true);
+        viewPagerAdapter.hidePage(testTab);
         viewPagerAdapter.hidePage(scanTab);
         viewPagerAdapter.hidePage(updateTab);
         viewPager.setAdapter(viewPagerAdapter);
