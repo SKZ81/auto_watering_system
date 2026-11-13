@@ -1,0 +1,29 @@
+<resources>
+    <declare-styleable name="CultureProgramTimeline">
+
+        <attr name="AxisWidth" format="dimension" />
+        <attr name="RightPadding" format="dimension" />
+        <attr name="TopPadding" format="dimension" />
+        <attr name="BottomPadding" format="dimension" />
+
+        <attr name="HeaderHeight" format="dimension" />
+        <attr name="RowHeight" format="dimension" />
+        <attr name="RowGap" format="dimension" />
+        <attr name="LegendHeight" format="dimension" />
+
+        <attr name="PhaseTextSize" format="dimension" />
+        <attr name="TextSize" format="dimension" />
+        <attr name="LineWidth" format="dimension" />
+
+        <attr name="StaircaseOffset" format="dimension" />
+
+        <attr name="GridColor" format="color" />
+        <attr name="AxisColor" format="color" />
+        <attr name="PhaseColor" format="color" />
+        <attr name="CurrentDayColor" format="color" />
+        <attr name="TextColor" format="color" />
+
+        <attr name="FertilizerColors" format="reference" />
+
+    </declare-styleable>
+</resources>
