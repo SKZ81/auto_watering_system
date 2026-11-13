@@ -122,13 +122,15 @@ public class AppConfFragment extends Fragment
     }
 
     public void activateConnectButton() {
-        connectButton.setEnabled(true);
-        connectButton.setClickable(true);
-        connectButton.setOnClickListener(v -> {
-            mainActivity.connectServer();
-            connectButton.setClickable(false);
-            connectButton.setEnabled(false);
-        });
+        if (connectButton != null) {
+            connectButton.setEnabled(true);
+            connectButton.setClickable(true);
+            connectButton.setOnClickListener(v -> {
+                mainActivity.connectServer();
+                connectButton.setClickable(false);
+                connectButton.setEnabled(false);
+            });
+        }
     }
 
     // Implementation needed, but not used.
